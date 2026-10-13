@@ -1,7 +1,24 @@
 export type Sex = 'male' | 'female';
 export type Activity = 'sedentary' | 'light' | 'moderate' | 'active';
 
+/** 生活节奏：决定 AI 食谱的备餐难度 */
+export type Routine = 'office' | 'student' | 'home' | 'shift';
+export type BreakfastMode = 'buy' | 'quick' | 'cook'; // 买现成 / 5 分钟快手 / 能做饭
+export type LunchMode = 'takeout' | 'canteen' | 'bento' | 'cook'; // 外卖 / 食堂 / 带饭 / 自己做
+export type DinnerMinutes = 0 | 15 | 30 | 60; // 0=不做饭，60=不限
+
+export interface Lifestyle {
+  routine: Routine;
+  breakfast: BreakfastMode;
+  lunch: LunchMode;
+  dinnerMinutes: DinnerMinutes;
+}
+
+export const DEFAULT_LIFESTYLE: Lifestyle = { routine: 'office', breakfast: 'quick', lunch: 'takeout', dinnerMinutes: 15 };
+
 export interface Profile {
+  /** 生活节奏（旧数据可能没有，使用 DEFAULT_LIFESTYLE） */
+  lifestyle?: Lifestyle;
   heightCm: number;
   startWeightKg: number;
   targetWeightKg: number;
@@ -67,3 +84,31 @@ export interface Settings {
 }
 
 export type KcalStatus = 'ok' | 'slight' | 'over';
+
+/** 饮食周表 AI 对话消息 */
+export interface PlanChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  /** ISO 时间 */
+  at: string;
+  /** assistant 消息附带的改动数（仅展示用） */
+  changeCount?: number;
+  /** 该条方案是否已应用 */
+  applied?: boolean;
+}
+
+/** 对某一格的修改 */
+export interface MealChange {
+  weekday: Weekday;
+  meal: MealKey;
+  next: Meal;
+}
+
+/** AI 对话返回的调整方案 */
+export interface PlanAdjustment {
+  reply: string;
+  changes: MealChange[];
+  memoryAdd: string[];
+  memoryRemove: string[];
+}

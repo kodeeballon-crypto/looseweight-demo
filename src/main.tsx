@@ -8,6 +8,7 @@ import './styles/overlays.css';
 import './styles/pages.css';
 import './styles/planChat.css';
 import './styles/workout.css';
+import './styles/nutrition.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1,0 +1,204 @@
+/* ---------- 饮食周表：今日营养结构 ---------- */
+
+.nutri-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nutri-empty {
+  margin: 4px 0 0;
+  line-height: 1.7;
+}
+
+.nutri-stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 194, 75, 0.1);
+  border: 1px solid rgba(255, 194, 75, 0.3);
+  color: var(--amber);
+  font-size: 13px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--teal);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.link-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.nutri-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+.macro-pie {
+  width: 100%;
+  height: 220px;
+}
+
+.nutri-rates {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nutri-rate {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  animation: nutri-in 0.5s var(--ease) both;
+}
+.nutri-rate:nth-child(2) {
+  animation-delay: 80ms;
+}
+.nutri-rate:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.nutri-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.nutri-rate-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.nutri-rate-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.nutri-rate-head b {
+  min-width: 48px;
+}
+.nutri-rate-head .num {
+  color: var(--text-2);
+}
+.nutri-rate-head .nutri-pct {
+  color: var(--text);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.nutri-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.nutri-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(52, 224, 161, 0.18);
+  border-left: 1px dashed rgba(52, 224, 161, 0.6);
+  border-right: 1px dashed rgba(52, 224, 161, 0.6);
+}
+.nutri-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  opacity: 0.9;
+  transition: width 0.6s var(--ease);
+}
+
+.nutri-summary {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(139, 124, 255, 0.1), rgba(34, 199, 232, 0.08));
+  border: 1px solid var(--border);
+}
+.nutri-summary-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.nutri-summary p {
+  margin: 0;
+  color: var(--text-2);
+  line-height: 1.7;
+}
+.nutri-tips {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: var(--text);
+  line-height: 1.8;
+}
+.nutri-tips li::marker {
+  color: var(--mint);
+}
+
+.nutri-table {
+  width: 100%;
+  margin-top: 16px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.nutri-table th,
+.nutri-table td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+.nutri-table th:first-child,
+.nutri-table td:first-child {
+  text-align: left;
+}
+.nutri-table th {
+  color: var(--text-3);
+  font-weight: 500;
+}
+.nutri-table tbody tr {
+  transition: background 0.2s;
+}
+.nutri-table tbody tr:hover {
+  background: var(--surface);
+}
+
+@keyframes nutri-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .nutri-body {
+    grid-template-columns: 1fr;
+  }
+  .card-title:has(.nutri-actions) {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}

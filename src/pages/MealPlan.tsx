@@ -17,6 +17,7 @@ import { DISCLAIMER } from '../constants';
 import PlanChat, { type PendingChange } from '../components/PlanChat';
 import { avgDailyKcal, previewMap } from '../domain/planChat';
 import { useWide } from '../hooks/useWide';
+import NutritionCard from '../components/NutritionCard';
 
 export default function MealPlan() {
   const { profile, records, plan, settings, planMemory, setPlan, updateMeal } = useStore();
@@ -110,6 +111,8 @@ export default function MealPlan() {
             )}
           </div>
           <WeekTable plan={plan} today={today} busyCell={busyCell} aiReady={aiReady} preview={preview} onEdit={(w, k) => setEditing({ w, k })} onSwap={swap} />
+
+          <NutritionCard />
 
           {plan.tips && plan.tips.length > 0 && (
             <section className="card mt-24">

@@ -7,6 +7,7 @@ import './styles/components.css';
 import './styles/overlays.css';
 import './styles/pages.css';
 import './styles/planChat.css';
+import './styles/workout.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

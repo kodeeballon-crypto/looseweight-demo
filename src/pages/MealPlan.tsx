@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useStore } from '../store/useStore';
@@ -16,19 +16,7 @@ import { Modal, confirmDialog } from '../components/Modal';
 import { DISCLAIMER } from '../constants';
 import PlanChat, { type PendingChange } from '../components/PlanChat';
 import { avgDailyKcal, previewMap } from '../domain/planChat';
-
-const WIDE_QUERY = '(min-width: 1440px)';
-
-function useWide() {
-  const [wide, setWide] = useState(() => window.matchMedia(WIDE_QUERY).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(WIDE_QUERY);
-    const on = () => setWide(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return wide;
-}
+import { useWide } from '../hooks/useWide';
 
 export default function MealPlan() {
   const { profile, records, plan, settings, planMemory, setPlan, updateMeal } = useStore();

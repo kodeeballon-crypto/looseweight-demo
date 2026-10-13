@@ -4,6 +4,7 @@ import { useStore } from './store/useStore';
 import Dashboard from './pages/Dashboard';
 import Stats from './pages/Stats';
 import MealPlan from './pages/MealPlan';
+import Workout from './pages/Workout';
 import Settings from './pages/Settings';
 import Toasts from './components/Toasts';
 import { ConfirmHost } from './components/Modal';
@@ -14,6 +15,7 @@ const NAV = [
   { to: '/', ico: '🏠', label: '今日' },
   { to: '/stats', ico: '📈', label: '统计' },
   { to: '/plan', ico: '🥗', label: '饮食周表' },
+  { to: '/workout', ico: '🏋️', label: '训练周表' },
   { to: '/settings', ico: '⚙️', label: '设置' },
 ];
 
@@ -53,6 +55,7 @@ function Shell() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/plan" element={<MealPlan />} />
+            <Route path="/workout" element={<Workout />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

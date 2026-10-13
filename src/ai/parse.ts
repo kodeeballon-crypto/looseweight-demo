@@ -109,7 +109,7 @@ export function parseEncouragement(text: string): string {
 const MEMORY_ITEM_MAX = 30;
 const MEMORY_BATCH_MAX = 5;
 
-function toStrList(v: unknown): string[] {
+export function toStrList(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
   return v
     .filter((s): s is string => typeof s === 'string' && s.trim() !== '')
@@ -117,7 +117,7 @@ function toStrList(v: unknown): string[] {
     .slice(0, MEMORY_BATCH_MAX);
 }
 
-function toWeekday(v: unknown): Weekday | null {
+export function toWeekday(v: unknown): Weekday | null {
   const n = typeof v === 'string' ? Number(v) : v;
   return typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 7 ? (n as Weekday) : null;
 }

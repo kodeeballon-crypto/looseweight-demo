@@ -28,19 +28,15 @@
 
 - [x] 需求澄清，设计文档已写好并提交（git 仓库已初始化，分支 `main`）
 - [x] 创建 `package.json`，已写好 scripts：dev / build / preview / test
-- [ ] **安装依赖**：上次运行被中断，`node_modules` 还不存在，需要重新执行：
-  ```powershell
-  npm install react react-dom react-router-dom zustand dayjs echarts
-  npm install -D vite @vitejs/plugin-react typescript @types/react @types/react-dom @types/node vitest
-  ```
-  注意：不用 `echarts-for-react`（可能和 React 19 的 peer 依赖冲突），自己写一个轻量的 `EChart` 包装组件（useRef + echarts.init + ResizeObserver）。
-- [ ] 配置文件：`vite.config.ts`（含 AI 代理中间件）、`tsconfig.json`、`index.html`
-- [ ] `src/domain/`：calc.ts、badges.ts、encourage.ts，并写 Vitest 单测
-- [ ] `src/ai/`：client.ts、prompts.ts、parse.ts（parse 要写单测）
-- [ ] `src/store/useStore.ts`
-- [ ] 页面：Dashboard、Stats、MealPlan、Settings，以及通用组件和样式
-- [ ] `npm test` 和 `npm run build` 都通过后，`npm run dev` 启动，交给用户试用
-- [ ] 写 README（启动方式、怎么配置 AI）
+- [x] **安装依赖**（实际版本：React 19、Vite 8、TypeScript 7、ECharts 6、Zustand 5、Vitest 5）。自写 `EChart` 包装组件，未用 echarts-for-react。
+- [x] 配置文件：`vite.config.ts`（含 AI 代理中间件，dev + preview 都生效）、`tsconfig.json`、`index.html`
+- [x] `src/domain/`：calc.ts、badges.ts、encourage.ts + Vitest 单测
+- [x] `src/ai/`：client.ts、prompts.ts、parse.ts（parse 有单测）
+- [x] `src/store/useStore.ts`（另有 toast.ts、dataio.ts）
+- [x] 页面：Dashboard、Stats、MealPlan、Settings，以及通用组件和样式
+- [x] `npm test`（60 个用例）和 `npm run build` 均通过；已用伪造 Key 验证代理能把请求转发到 DeepSeek 并拿回 401
+- [x] 写 README（启动方式、怎么配置 AI）
+- [ ] 浏览器端完整手动验证（因网络中断未完成）→ 等用户试用反馈
 
 ## 4. 环境信息
 

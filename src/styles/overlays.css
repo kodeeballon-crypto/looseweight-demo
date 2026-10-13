@@ -1,0 +1,164 @@
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(3, 6, 16, 0.66);
+  backdrop-filter: blur(6px);
+  animation: fadeUp 0.25s var(--ease) both;
+}
+.modal {
+  width: min(520px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  padding: 26px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: linear-gradient(160deg, #161f40, #0e1530);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8);
+  animation: pop 0.35s var(--ease) both;
+}
+.modal h3 {
+  font-size: 19px;
+  margin-bottom: 8px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+/* ---------- Toast ---------- */
+.toasts {
+  position: fixed;
+  z-index: 100;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(440px, calc(100vw - 24px));
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-strong);
+  background: rgba(20, 28, 58, 0.94);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  animation: fadeUp 0.35s var(--ease) both;
+  cursor: pointer;
+}
+.toast-success {
+  border-color: rgba(52, 224, 161, 0.5);
+}
+.toast-error {
+  border-color: rgba(255, 107, 139, 0.55);
+}
+
+/* ---------- 徽章弹窗 ---------- */
+.badge-pop {
+  text-align: center;
+  padding: 34px 26px 26px;
+  overflow: hidden;
+  position: relative;
+}
+.badge-pop::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(from 0deg, transparent, rgba(52, 224, 161, 0.18), transparent 30%, rgba(139, 124, 255, 0.18), transparent 60%);
+  animation: spin 9s linear infinite;
+  z-index: 0;
+}
+.badge-pop > * {
+  position: relative;
+  z-index: 1;
+}
+.badge-emoji {
+  font-size: 76px;
+  line-height: 1;
+  display: inline-block;
+  animation: pop 0.7s var(--ease) both, floaty 3s ease-in-out 0.7s infinite;
+  filter: drop-shadow(0 10px 24px rgba(255, 194, 75, 0.45));
+}
+@keyframes floaty {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.badge-list {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* 彩带 */
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+  overflow: hidden;
+}
+.confetti i {
+  position: absolute;
+  top: -12px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.9;
+  animation: fall linear forwards;
+}
+@keyframes fall {
+  to {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0.2;
+  }
+}
+
+/* ---------- 加载遮罩 ---------- */
+.loading-card {
+  text-align: center;
+  padding: 40px 26px;
+}
+.loading-orb {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: conic-gradient(var(--mint), var(--teal), var(--violet), var(--mint));
+  animation: spin 1.6s linear infinite;
+  display: grid;
+  place-items: center;
+}
+.loading-orb::after {
+  content: '🥗';
+  font-size: 34px;
+  width: 70px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #121a38;
+  animation: spin 1.6s linear infinite reverse;
+}
+.skeleton {
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}

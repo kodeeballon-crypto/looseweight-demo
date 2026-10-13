@@ -174,3 +174,29 @@ export interface WorkoutAdjustment {
   memoryAdd: string[];
   memoryRemove: string[];
 }
+
+// ---------- 营养结构 ----------
+
+export type MacroKind = 'protein' | 'carbs' | 'fat';
+
+/** 三大营养素克数 */
+export interface Macros {
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+/** 某天的 AI 营养分析结果（按日期缓存） */
+export interface NutritionAnalysis {
+  /** YYYY-MM-DD */
+  date: string;
+  /** 分析时的餐食签名，变化即视为过期 */
+  signature: string;
+  meals: Partial<Record<MealKey, Macros>>;
+  summary: string;
+  suggestions: string[];
+  /** ISO 时间 */
+  at: string;
+}
+
+export type NutritionCache = Record<string, NutritionAnalysis>;

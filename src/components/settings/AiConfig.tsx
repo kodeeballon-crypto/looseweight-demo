@@ -5,7 +5,7 @@ import { chat, errorMessage, isAiConfigured } from '../../ai/client';
 import { PING_MESSAGES } from '../../ai/prompts';
 
 const PRESETS = [
-  { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+  { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', model: 'deepseek-flash' },
   { name: '通义千问', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
   { name: 'Kimi', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
   { name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
@@ -54,7 +54,7 @@ export default function AiConfig() {
           <input
             id="ai-baseUrl"
             className="input"
-            placeholder="https://api.deepseek.com/v1"
+            placeholder="https://api.deepseek.com"
             value={settings.baseUrl}
             onChange={(e) => setSettings({ baseUrl: e.target.value })}
           />
@@ -64,7 +64,7 @@ export default function AiConfig() {
           <input
             id="ai-model"
             className="input"
-            placeholder="deepseek-chat"
+            placeholder="deepseek-flash"
             value={settings.model}
             onChange={(e) => setSettings({ model: e.target.value })}
           />

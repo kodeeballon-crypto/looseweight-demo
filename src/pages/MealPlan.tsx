@@ -15,7 +15,7 @@ import MealEditModal from '../components/MealEditModal';
 import { Modal, confirmDialog } from '../components/Modal';
 import { DISCLAIMER } from '../constants';
 import PlanChat, { type PendingChange } from '../components/PlanChat';
-import { previewMap } from '../domain/planChat';
+import { avgDailyKcal, previewMap } from '../domain/planChat';
 
 const WIDE_QUERY = '(min-width: 1440px)';
 
@@ -114,7 +114,7 @@ export default function MealPlan() {
         <div className={`plan-layout ${aiReady && wide ? 'with-chat' : ''}`}>
           <div className="plan-main">
           <div className="plan-head" style={{ marginBottom: 18 }}>
-            <div className="plan-stat"><span>计划每日热量</span><b className="num grad-text">{plan.dailyKcalTarget} kcal</b></div>
+            <div className="plan-stat"><span>计划每日热量</span><b className="num grad-text">{avgDailyKcal(plan)} kcal</b></div>
             <div className="plan-stat"><span>当前热量目标</span><b className="num">{info.target} kcal</b></div>
             <div className="plan-stat"><span>生成时间</span><b className="num" style={{ fontSize: 15 }}>{dayjs(plan.createdAt).format('M/D HH:mm')}</b></div>
             {Math.abs(plan.dailyKcalTarget - info.target) > 100 && (

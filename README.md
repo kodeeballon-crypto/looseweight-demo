@@ -20,7 +20,7 @@ npm run dev      # 打开 http://localhost:5173
 
 | 服务 | Base URL | 默认模型 |
 |---|---|---|
-| DeepSeek | https://api.deepseek.com/v1 | deepseek-chat |
+| DeepSeek | https://api.deepseek.com | deepseek-flash |
 | 通义千问 | https://dashscope.aliyuncs.com/compatible-mode/v1 | qwen-plus |
 | Kimi | https://api.moonshot.cn/v1 | moonshot-v1-8k |
 | OpenAI | https://api.openai.com/v1 | gpt-4o-mini |

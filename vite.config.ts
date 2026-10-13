@@ -72,5 +72,8 @@ function aiProxyPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), aiProxyPlugin()],
-  server: { port: 5173 },
+  // localStorage 按“源”（协议+域名+端口）隔离：端口一变，之前的数据就“看不见”了。
+  // strictPort 让 5173 被占用时直接报错，而不是悄悄换到 5174 导致数据像是丢了。
+  server: { port: 5173, strictPort: true },
+  preview: { port: 4173, strictPort: true },
 });

@@ -9,9 +9,9 @@ import type { ExportData } from './dataio';
 export const STORAGE_KEY = 'looseweight-v1';
 
 export const DEFAULT_SETTINGS: Settings = {
-  baseUrl: 'https://api.deepseek.com/v1',
+  baseUrl: 'https://api.deepseek.com',
   apiKey: '',
-  model: 'deepseek-chat',
+  model: 'deepseek-flash',
   directMode: false,
 };
 

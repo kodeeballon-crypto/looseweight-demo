@@ -36,6 +36,13 @@ export function dayTotals(plan: WeekPlan, changes: MealChange[] = []): Record<We
   return out;
 }
 
+/** 按当前周表实际餐食计算的日均热量（四舍五入）；dailyKcalTarget 只是生成时的目标，不随编辑变化 */
+export function avgDailyKcal(plan: WeekPlan): number {
+  const totals = Object.values(dayTotals(plan));
+  if (totals.length === 0) return 0;
+  return Math.round(totals.reduce((s, x) => s + x, 0) / totals.length);
+}
+
 /** 合并长期记忆：先删后加，去重，超上限丢弃最旧 */
 export function mergeMemory(cur: string[], add: string[], remove: string[], max = MEMORY_MAX): string[] {
   const rm = new Set(remove.map((s) => s.trim()));

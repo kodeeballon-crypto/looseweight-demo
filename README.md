@@ -32,7 +32,7 @@ npm run dev      # 打开 http://localhost:5173
 ## 使用流程
 
 1. 首次打开 → 填写个人档案（身高、体重、目标、年龄、活动量、饮食偏好）→ 自动算出 BMI / BMR / TDEE / 每日热量目标。
-2. 「饮食周表」→ 生成我的一周食谱（7 天 × 4 餐，今天这一列高亮）；点格子手动编辑，悬停点「🔄 换一个」只替换这一餐。
+2. 「饮食周表」→ 生成我的一周食谱（7 天 × 4 餐，今天这一列高亮）；点格子手动编辑，悬停点「🔄 换一个」只替换这一餐。周表下方「🥧 今日营养结构」点「分析今日饮食」，AI 估算三大营养素，显示热量占比饼图、偏低/合适/偏高评级和改进建议（已打卡按已吃的餐，未打卡按计划预览）。
 3. 「训练周表」→ 首次先填训练条件（场地、单次时长、每周天数、水平、身体限制）→ 生成一周训练（今天这一列红色高亮）；点格子手动编辑。完成后勾选今天的动作，或点「一键完成今日训练」，消耗热量会同步到「今日」的红色圆环、今日进度卡片，以及「统计」的红色柱。右侧 AI 教练可以答疑，也可以按天调整计划。
 4. 「今日」→ 输入体重、勾选按计划吃了哪几顿、填计划外摄入 → 打卡。自动计算热量、生成鼓励、解锁徽章。是否达标按净摄入判断（摄入 − 训练消耗）。
 5. 「统计」→ 体重趋势（7 日均线 + 目标线）、热量图（摄入柱 + 红色消耗柱 + 净摄入线）、预计达成日期、历史记录编辑/删除。
@@ -42,8 +42,8 @@ npm run dev      # 打开 http://localhost:5173
 
 ```
 src/
-  domain/    纯计算：calc（BMI/BMR/TDEE/统计/预测）、badges（连续打卡/徽章）、encourage（离线鼓励语）、workout（训练消耗/完成状态/净摄入）
-  ai/        client（OpenAI 兼容调用 + 错误归一化）、prompts（三套提示词）、parse（JSON 提取与校验）、workoutPrompts / parseWorkout（训练教练提示词与解析）
+  domain/    纯计算：calc（BMI/BMR/TDEE/统计/预测）、badges（连续打卡/徽章）、encourage（离线鼓励语）、workout（训练消耗/完成状态/净摄入）、nutrition（营养占比/评级）
+  ai/        client（OpenAI 兼容调用 + 错误归一化）、prompts（三套提示词）、parse（JSON 提取与校验）、workoutPrompts / parseWorkout（训练教练提示词与解析）、nutritionPrompts / parseNutrition（营养分析）
   store/     useStore（Zustand + persist）、toast、dataio（导入校验）
   services/  encourage（AI 鼓励 + 离线兜底）
   hooks/     useWide（宽屏判断）

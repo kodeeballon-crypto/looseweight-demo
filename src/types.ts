@@ -112,3 +112,65 @@ export interface PlanAdjustment {
   memoryAdd: string[];
   memoryRemove: string[];
 }
+
+// ---------- 训练 ----------
+
+export type TrainingPlace = 'home' | 'gym' | 'outdoor';
+export type TrainingLevel = 'beginner' | 'base';
+export type TrainingMinutes = 20 | 30 | 45 | 60;
+export type TrainingDays = 3 | 4 | 5 | 6 | 7;
+
+/** 训练条件：生成训练周表前填写 */
+export interface TrainingPrefs {
+  place: TrainingPlace;
+  minutes: TrainingMinutes;
+  daysPerWeek: TrainingDays;
+  level: TrainingLevel;
+  /** 伤病/不能做的动作，可为空 */
+  limits: string;
+}
+
+export interface Exercise {
+  /** 客户端生成，用于勾选 */
+  id: string;
+  name: string;
+  /** 组数×次数或时长 + 要点 */
+  detail: string;
+  kcal: number;
+}
+
+export interface WorkoutDay {
+  weekday: Weekday;
+  /** 训练重点，如“下肢力量”“休息·拉伸” */
+  focus: string;
+  exercises: Exercise[];
+}
+
+export interface WorkoutPlan {
+  createdAt: string;
+  days: WorkoutDay[];
+  tips?: string[];
+}
+
+/** 已完成动作快照：勾选时记录，之后改周表不影响历史 */
+export interface DoneExercise {
+  id: string;
+  name: string;
+  kcal: number;
+}
+
+/** 日期(YYYY-MM-DD) → 当天已完成的动作 */
+export type WorkoutLog = Record<string, DoneExercise[]>;
+
+/** 训练对话的修改以“整天”为粒度 */
+export interface WorkoutChange {
+  weekday: Weekday;
+  next: WorkoutDay;
+}
+
+export interface WorkoutAdjustment {
+  reply: string;
+  changes: WorkoutChange[];
+  memoryAdd: string[];
+  memoryRemove: string[];
+}

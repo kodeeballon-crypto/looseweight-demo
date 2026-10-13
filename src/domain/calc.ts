@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import type { Activity, DailyRecord, KcalStatus, Profile, Sex, WeekPlan, Weekday } from '../types';
+import type { Activity, DailyRecord, KcalStatus, Profile, Sex, WeekPlan, Weekday, WorkoutLog } from '../types';
+import { burnedOn, netIntake } from './workout';
 
 export const ACTIVITY_FACTOR: Record<Activity, number> = {
   sedentary: 1.2,
@@ -168,7 +169,8 @@ export interface Stats {
   kcalDays: number;
 }
 
-export function computeStats(profile: Profile, records: DailyRecord[], plan: WeekPlan | null, target: number): Stats {
+/** log 传入时按净摄入（摄入 − 训练消耗）判定达标 */
+export function computeStats(profile: Profile, records: DailyRecord[], plan: WeekPlan | null, target: number, log: WorkoutLog = {}): Stats {
   const sorted = sortRecords(records);
   const latest = sorted.at(-1);
   const startWeight = profile.startWeightKg;
@@ -189,7 +191,7 @@ export function computeStats(profile: Profile, records: DailyRecord[], plan: Wee
   }
 
   const withIntake = sorted.filter(hasIntakeData);
-  const okDays = withIntake.filter((r) => kcalStatus(intakeOf(r, plan).kcal, target) === 'ok').length;
+  const okDays = withIntake.filter((r) => kcalStatus(netIntake(intakeOf(r, plan).kcal, burnedOn(log, r.date)), target) === 'ok').length;
 
   return {
     startWeight,

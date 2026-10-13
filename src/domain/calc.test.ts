@@ -136,6 +136,12 @@ describe('统计', () => {
     expect(s.kcalDays).toBe(2);
     expect(s.kcalOkRate).toBe(0.5);
   });
+  it('传入训练记录后按净摄入判定达标', () => {
+    const r = [rec('2026-10-13', 98, { mealsEaten: ['breakfast', 'lunch', 'dinner'], extraKcal: 600 })]; // 2100
+    expect(computeStats(profile, r, plan, 1800).kcalOkRate).toBe(0);
+    const log = { '2026-10-13': [{ id: 'a', name: '快走', kcal: 300 }] }; // 净 1800
+    expect(computeStats(profile, r, plan, 1800, log).kcalOkRate).toBe(1);
+  });
   it('无记录时安全返回', () => {
     const s = computeStats(profile, [], null, 1800);
     expect(s.totalLoss).toBe(0);

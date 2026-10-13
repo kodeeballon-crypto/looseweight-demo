@@ -23,6 +23,8 @@ export default function DataManage() {
       records: s.records,
       plan: s.plan,
       seenBadges: s.seenBadges,
+      planMemory: s.planMemory,
+      planChat: s.planChat,
       settings: safeSettings,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

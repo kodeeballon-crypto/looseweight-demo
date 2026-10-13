@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import dayjs from 'dayjs';
-import type { Activity, Profile, Sex } from '../../types';
+import type { Activity, BreakfastMode, DinnerMinutes, Lifestyle, LunchMode, Profile, Routine, Sex } from '../../types';
+import { DEFAULT_LIFESTYLE } from '../../types';
 import { ACTIVITY_LABELS, bmiLevel, calcBmi, calcBmr, calcKcalTarget, calcTdee } from '../../domain/calc';
+import { BREAKFAST_LABELS, DINNER_LABELS, DINNER_OPTIONS, LUNCH_LABELS, ROUTINE_LABELS } from '../../domain/lifestyle';
 
 interface Props {
   initial: Profile | null;
@@ -15,6 +17,7 @@ type Form = Record<'heightCm' | 'startWeightKg' | 'targetWeightKg' | 'age', stri
   activity: Activity;
   startDate: string;
   preferences: string;
+  lifestyle: Lifestyle;
 };
 
 const RULES: Record<'heightCm' | 'startWeightKg' | 'targetWeightKg' | 'age', [number, number, string]> = {
@@ -34,6 +37,7 @@ export default function ProfileForm({ initial, currentWeight, onSave, saveLabel 
     activity: initial?.activity ?? 'sedentary',
     startDate: initial?.startDate ?? dayjs().format('YYYY-MM-DD'),
     preferences: initial?.preferences ?? '',
+    lifestyle: initial?.lifestyle ?? DEFAULT_LIFESTYLE,
   });
   const [touched, setTouched] = useState(false);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((s) => ({ ...s, [k]: v }));
@@ -72,6 +76,7 @@ export default function ProfileForm({ initial, currentWeight, onSave, saveLabel 
       activity: f.activity,
       startDate: f.startDate,
       preferences: f.preferences.trim() || undefined,
+      lifestyle: f.lifestyle,
     });
   };
 
@@ -92,6 +97,26 @@ export default function ProfileForm({ initial, currentWeight, onSave, saveLabel 
         <span>{unit}</span>
       </div>
       {touched && errors[k] && <div className="field-error">{errors[k]}</div>}
+    </div>
+  );
+
+  const setLife = <K extends keyof Lifestyle>(k: K, v: Lifestyle[K]) => setF((s) => ({ ...s, lifestyle: { ...s.lifestyle, [k]: v } }));
+  const seg = <V extends string>(k: 'routine' | 'breakfast' | 'lunch', label: string, labels: Record<V, string>) => (
+    <div className="lifestyle-row">
+      <span className="lifestyle-label">{label}</span>
+      <div className="segmented">
+        {(Object.keys(labels) as V[]).map((v) => (
+          <button
+            type="button"
+            key={v}
+            id={`pf-${k}-${v}`}
+            className={f.lifestyle[k] === v ? 'on' : ''}
+            onClick={() => setLife(k, v as never)}
+          >
+            {labels[v]}
+          </button>
+        ))}
+      </div>
     </div>
   );
 
@@ -127,11 +152,29 @@ export default function ProfileForm({ initial, currentWeight, onSave, saveLabel 
           </select>
         </div>
         <div className="field span-all">
+          <span className="field-label">生活节奏（AI 会按你的时间安排食谱）</span>
+          <div className="lifestyle-grid">
+            {seg<Routine>('routine', '身份', ROUTINE_LABELS)}
+            {seg<BreakfastMode>('breakfast', '工作日早餐', BREAKFAST_LABELS)}
+            {seg<LunchMode>('lunch', '工作日午餐', LUNCH_LABELS)}
+            <div className="lifestyle-row">
+              <span className="lifestyle-label">晚餐做饭时间</span>
+              <div className="segmented">
+                {DINNER_OPTIONS.map((v: DinnerMinutes) => (
+                  <button type="button" key={v} id={`pf-dinner-${v}`} className={f.lifestyle.dinnerMinutes === v ? 'on' : ''} onClick={() => setLife('dinnerMinutes', v)}>
+                    {DINNER_LABELS[v]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="field span-all">
           <label htmlFor="pf-preferences">饮食偏好 / 忌口（会告诉 AI）</label>
           <textarea
             id="pf-preferences"
             className="textarea"
-            placeholder="例如：不吃香菜，爱吃面食，对海鲜过敏，工作日午餐点外卖"
+            placeholder="例如：不吃香菜，爱吃面食，对海鲜过敏，预算每天 50 元以内"
             value={f.preferences}
             onChange={(e) => set('preferences', e.target.value)}
           />

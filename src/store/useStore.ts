@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
-import type { DailyRecord, Meal, MealKey, Profile, Settings, WeekPlan, Weekday } from '../types';
+import type { DailyRecord, Meal, MealChange, MealKey, PlanChatMessage, Profile, Settings, WeekPlan, Weekday } from '../types';
 import { sortRecords } from '../domain/calc';
+import { applyMealChanges, mergeMemory, trimChat } from '../domain/planChat';
 import { toast } from './toast';
 import type { ExportData } from './dataio';
 
@@ -20,6 +21,10 @@ interface State {
   plan: WeekPlan | null;
   settings: Settings;
   seenBadges: string[];
+  /** AI 对话提炼的长期饮食要求 */
+  planMemory: string[];
+  /** 饮食周表 AI 对话记录（最近 30 条） */
+  planChat: PlanChatMessage[];
 
   setProfile: (p: Profile) => void;
   upsertRecord: (r: DailyRecord) => void;
@@ -27,6 +32,12 @@ interface State {
   setEncouragement: (date: string, text: string) => void;
   setPlan: (plan: WeekPlan) => void;
   updateMeal: (weekday: Weekday, key: MealKey, meal: Meal) => void;
+  applyChanges: (changes: MealChange[]) => void;
+  appendChat: (m: PlanChatMessage) => void;
+  markChatApplied: (id: string) => void;
+  clearChat: () => void;
+  updateMemory: (add: string[], remove: string[]) => void;
+  removeMemory: (text: string) => void;
   setSettings: (s: Partial<Settings>) => void;
   markBadgesSeen: (ids: string[]) => void;
   importData: (d: ExportData) => void;
@@ -71,6 +82,8 @@ export const useStore = create<State>()(
       plan: null,
       settings: DEFAULT_SETTINGS,
       seenBadges: [],
+      planMemory: [],
+      planChat: [],
 
       setProfile: (profile) => set({ profile }),
 
@@ -99,6 +112,21 @@ export const useStore = create<State>()(
 
       setSettings: (s) => set({ settings: { ...get().settings, ...s } }),
 
+      applyChanges: (changes) => {
+        const plan = get().plan;
+        if (plan) set({ plan: applyMealChanges(plan, changes) });
+      },
+
+      appendChat: (m) => set({ planChat: trimChat([...get().planChat, m]) }),
+
+      markChatApplied: (id) => set({ planChat: get().planChat.map((m) => (m.id === id ? { ...m, applied: true } : m)) }),
+
+      clearChat: () => set({ planChat: [] }),
+
+      updateMemory: (add, remove) => set({ planMemory: mergeMemory(get().planMemory, add, remove) }),
+
+      removeMemory: (text) => set({ planMemory: get().planMemory.filter((s) => s !== text) }),
+
       markBadgesSeen: (ids) => set({ seenBadges: Array.from(new Set([...get().seenBadges, ...ids])) }),
 
       importData: (d) =>
@@ -107,22 +135,31 @@ export const useStore = create<State>()(
           records: sortRecords(d.records),
           plan: d.plan,
           seenBadges: d.seenBadges,
+          planMemory: d.planMemory ?? [],
+          planChat: d.planChat ?? [],
           // 保留本机的 API Key
           settings: d.settings ? { ...get().settings, ...d.settings, apiKey: get().settings.apiKey } : get().settings,
         }),
 
-      clearAll: () => set({ profile: null, records: [], plan: null, seenBadges: [], settings: DEFAULT_SETTINGS }),
+      clearAll: () =>
+        set({ profile: null, records: [], plan: null, seenBadges: [], planMemory: [], planChat: [], settings: DEFAULT_SETTINGS }),
     }),
     {
       name: STORAGE_KEY,
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => safeStorage),
+      migrate: (persisted) => {
+        const s = (persisted ?? {}) as Record<string, unknown>;
+        return { ...s, planMemory: Array.isArray(s.planMemory) ? s.planMemory : [], planChat: Array.isArray(s.planChat) ? s.planChat : [] } as unknown as State;
+      },
       partialize: (s) => ({
         profile: s.profile,
         records: s.records,
         plan: s.plan,
         settings: s.settings,
         seenBadges: s.seenBadges,
+        planMemory: s.planMemory,
+        planChat: s.planChat,
       }),
     },
   ),

@@ -1,6 +1,8 @@
-import type { DailyRecord, Profile, Settings, WeekPlan } from '../types';
+import type { DailyRecord, PlanChatMessage, Profile, Settings, WeekPlan } from '../types';
 import { MEAL_KEYS } from '../types';
 import { normalizeMeal } from '../ai/parse';
+import { isLifestyle } from '../domain/lifestyle';
+import { CHAT_MAX, MEMORY_MAX } from '../domain/planChat';
 
 export interface ExportData {
   app: 'looseweight';
@@ -11,6 +13,18 @@ export interface ExportData {
   plan: WeekPlan | null;
   seenBadges: string[];
   settings?: Omit<Settings, 'apiKey'>;
+  planMemory?: string[];
+  planChat?: PlanChatMessage[];
+}
+
+function toChat(v: unknown): PlanChatMessage[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is PlanChatMessage => {
+      const o = x as Record<string, unknown> | null;
+      return !!o && typeof o.id === 'string' && (o.role === 'user' || o.role === 'assistant') && typeof o.text === 'string' && typeof o.at === 'string';
+    })
+    .slice(-CHAT_MAX);
 }
 
 const isDate = (s: unknown): s is string => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -29,7 +43,8 @@ export function validateImport(raw: unknown): ExportData {
       throw new Error('个人档案数据不完整');
     if (p.sex !== 'male' && p.sex !== 'female') throw new Error('个人档案性别字段非法');
     if (!isDate(p.startDate)) throw new Error('个人档案开始日期非法');
-    profile = p as unknown as Profile;
+    profile = { ...(p as unknown as Profile) };
+    if (profile.lifestyle !== undefined && !isLifestyle(profile.lifestyle)) delete profile.lifestyle;
   }
 
   if (!Array.isArray(o.records)) throw new Error('缺少打卡记录 records');
@@ -64,5 +79,9 @@ export function validateImport(raw: unknown): ExportData {
     plan,
     seenBadges: Array.isArray(o.seenBadges) ? o.seenBadges.filter((s): s is string => typeof s === 'string') : [],
     settings: o.settings as ExportData['settings'],
+    planMemory: Array.isArray(o.planMemory)
+      ? o.planMemory.filter((s): s is string => typeof s === 'string' && s.trim() !== '').slice(-MEMORY_MAX)
+      : [],
+    planChat: toChat(o.planChat),
   };
 }

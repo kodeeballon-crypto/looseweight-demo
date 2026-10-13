@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import type { EChartsOption } from 'echarts';
 import EChart from './EChart';
-import type { DailyRecord, KcalStatus, WeekPlan } from '../types';
+import type { DailyRecord, KcalStatus, WeekPlan, WorkoutLog } from '../types';
 import { intakeOf, kcalStatus, movingAverage7, hasIntakeData } from '../domain/calc';
+import { burnedOn, netIntake } from '../domain/workout';
+import { BURN_C1, BURN_C2 } from './BurnRing';
 
 const AXIS = { lineStyle: { color: 'rgba(255,255,255,0.12)' } };
 const SPLIT = { lineStyle: { color: 'rgba(255,255,255,0.06)' } };
@@ -63,23 +65,32 @@ export function WeightChart({ records, target }: { records: DailyRecord[]; targe
 
 const BAR: Record<KcalStatus, string> = { ok: '#34e0a1', slight: '#ffc24b', over: '#ff6b8b' };
 
-export function KcalChart({ records, plan, target }: { records: DailyRecord[]; plan: WeekPlan | null; target: number }) {
+/** 柱：摄入（按净摄入状态着色）+ 红色训练消耗；线：净摄入 */
+export function KcalChart({ records, plan, target, log = {} }: { records: DailyRecord[]; plan: WeekPlan | null; target: number; log?: WorkoutLog }) {
   const option = useMemo<EChartsOption>(() => {
-    const rows = records.filter(hasIntakeData).map((r) => {
-      const k = intakeOf(r, plan).kcal;
-      return { date: r.date, kcal: k, status: kcalStatus(k, target) };
+    const byDate = new Map(records.filter(hasIntakeData).map((r) => [r.date, r]));
+    const dates = [...new Set([...byDate.keys(), ...Object.keys(log).filter((d) => burnedOn(log, d) > 0)])].sort();
+    const rows = dates.map((date) => {
+      const r = byDate.get(date);
+      const intake = r ? intakeOf(r, plan).kcal : 0;
+      const burned = burnedOn(log, date);
+      const net = netIntake(intake, burned);
+      return { date, intake, burned, net, status: kcalStatus(net, target) };
     });
+    const hasBurn = rows.some((r) => r.burned > 0);
     return {
-      grid: { left: 48, right: 24, top: 24, bottom: 30 },
+      grid: { left: 48, right: 24, top: 36, bottom: 30 },
       tooltip: { ...TOOLTIP, valueFormatter: (v) => `${v} kcal` },
+      legend: { top: 0, right: 0, textStyle: LABEL, itemWidth: 14, data: hasBurn ? ['摄入', '训练消耗', '净摄入'] : ['摄入'] },
       xAxis: { type: 'category', data: rows.map((r) => r.date.slice(5)), axisLine: AXIS, axisLabel: LABEL },
       yAxis: { type: 'value', axisLabel: LABEL, splitLine: SPLIT },
       series: [
         {
           name: '摄入',
           type: 'bar',
-          barMaxWidth: 26,
-          data: rows.map((r) => ({ value: r.kcal, itemStyle: { color: BAR[r.status], borderRadius: [8, 8, 2, 2] } })),
+          barMaxWidth: 22,
+          itemStyle: { color: BAR.ok },
+          data: rows.map((r) => ({ value: r.intake, itemStyle: { color: BAR[r.status], borderRadius: [8, 8, 2, 2] } })),
           markLine: {
             symbol: 'none',
             silent: true,
@@ -88,8 +99,33 @@ export function KcalChart({ records, plan, target }: { records: DailyRecord[]; p
             data: [{ yAxis: target }],
           },
         },
+        ...(hasBurn
+          ? [
+              {
+                name: '训练消耗',
+                type: 'bar' as const,
+                barMaxWidth: 22,
+                data: rows.map((r) => r.burned),
+                itemStyle: {
+                  color: { type: 'linear' as const, x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: BURN_C1 }, { offset: 1, color: BURN_C2 }] },
+                  borderRadius: [8, 8, 2, 2],
+                  shadowBlur: 10,
+                  shadowColor: BURN_C1 + '66',
+                },
+              },
+              {
+                name: '净摄入',
+                type: 'line' as const,
+                data: rows.map((r) => r.net),
+                symbol: 'circle',
+                symbolSize: 7,
+                lineStyle: { width: 1.5, color: '#eef2ff' },
+                itemStyle: { color: '#eef2ff', borderColor: '#0a0f1e', borderWidth: 2 },
+              },
+            ]
+          : []),
       ],
     };
-  }, [records, plan, target]);
+  }, [records, plan, target, log]);
   return <EChart option={option} className="chart-box sm" />;
 }

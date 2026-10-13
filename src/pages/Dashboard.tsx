@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useStore } from '../store/useStore';
 import { toast } from '../store/toast';
-import { bmiLevel, computeStats, energyInfo, intakeOf, kcalStatus } from '../domain/calc';
+import { bmiLevel, computeStats, energyInfo, intakeOf, kcalStatus, weekdayOf } from '../domain/calc';
+import { burnedOn, dayBurn, netIntake } from '../domain/workout';
 import { calcStreak, newBadges, unlockedBadges } from '../domain/badges';
 import { generateEncouragement, todayStr } from '../services/encourage';
 import { isAiConfigured } from '../ai/client';
@@ -11,6 +12,7 @@ import MetricCard from '../components/MetricCard';
 import CheckInForm, { type CheckInValues } from '../components/CheckInForm';
 import KcalRing from '../components/KcalRing';
 import GoalProgress from '../components/GoalProgress';
+import TodayProgress from '../components/TodayProgress';
 import { showBadges } from '../components/BadgePopup';
 
 const BMI_COLOR = { under: '#5aa9ff', normal: '#34e0a1', over: '#ffc24b', obese: '#ff6b8b' } as const;
@@ -26,18 +28,23 @@ function greeting() {
 }
 
 export default function Dashboard() {
-  const { profile, records, plan, settings, seenBadges, upsertRecord, setEncouragement } = useStore();
+  const { profile, records, plan, settings, seenBadges, workoutPlan, workoutLog, upsertRecord, setEncouragement } = useStore();
   const [genBusy, setGenBusy] = useState(false);
   if (!profile) return null;
 
   const today = todayStr();
   const todayRec = records.find((r) => r.date === today);
   const info = energyInfo(profile, records);
-  const stats = computeStats(profile, records, plan, info.target);
+  const stats = computeStats(profile, records, plan, info.target, workoutLog);
   const streak = calcStreak(records, today);
   const level = bmiLevel(info.bmi);
   const intake = intakeOf(todayRec ?? { date: today, mealsEaten: [] }, plan).kcal;
-  const status = kcalStatus(intake, info.target);
+  const burned = burnedOn(workoutLog, today);
+  const net = netIntake(intake, burned);
+  const status = kcalStatus(net, info.target);
+  const todayWorkout = workoutPlan?.days.find((d) => d.weekday === weekdayOf(today));
+  const doneIds = new Set((workoutLog[today] ?? []).map((e) => e.id));
+  const doneCount = todayWorkout ? todayWorkout.exercises.filter((e) => doneIds.has(e.id)).length : 0;
 
   const runEncourage = async (newMilestone: boolean) => {
     const s = useStore.getState();
@@ -139,15 +146,18 @@ export default function Dashboard() {
           <section className="card" style={{ animationDelay: '240ms' }}>
             <div className="card-title">
               <h2>🔥 今日热量</h2>
-              <span className={`tag tag-${status}`}>{intake === 0 ? '未记录' : status === 'ok' ? '达标' : status === 'slight' ? '略超' : '超标'}</span>
+              <span className={`tag tag-${status}`}>{intake === 0 && burned === 0 ? '未记录' : status === 'ok' ? '达标' : status === 'slight' ? '略超' : '超标'}</span>
             </div>
-            <KcalRing intake={intake} target={info.target} status={status} />
+            <KcalRing intake={net} target={info.target} status={status} burned={burned} burnPlan={todayWorkout ? dayBurn(todayWorkout) : 0} />
             <div className="ring-legend">
-              <div>已摄入<b className="num">{intake}</b></div>
-              <div>剩余<b className="num">{Math.max(0, info.target - intake)}</b></div>
+              <div>摄入<b className="num">{intake}</b></div>
+              <div className="burn">🔴 训练消耗<b className="num">{burned}</b></div>
+              <div>净摄入<b className="num">{net}</b></div>
               <div>目标<b className="num">{info.target}</b></div>
             </div>
           </section>
+
+          <TodayProgress mealsEaten={todayRec?.mealsEaten.length ?? 0} workout={todayWorkout} doneCount={doneCount} burned={burned} />
         </div>
       </div>
 

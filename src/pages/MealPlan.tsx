@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useStore } from '../store/useStore';
@@ -14,12 +14,31 @@ import WeekTable, { cellId } from '../components/WeekTable';
 import MealEditModal from '../components/MealEditModal';
 import { Modal, confirmDialog } from '../components/Modal';
 import { DISCLAIMER } from '../constants';
+import PlanChat, { type PendingChange } from '../components/PlanChat';
+import { previewMap } from '../domain/planChat';
+
+const WIDE_QUERY = '(min-width: 1440px)';
+
+function useWide() {
+  const [wide, setWide] = useState(() => window.matchMedia(WIDE_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(WIDE_QUERY);
+    const on = () => setWide(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return wide;
+}
 
 export default function MealPlan() {
-  const { profile, records, plan, settings, setPlan, updateMeal } = useStore();
+  const { profile, records, plan, settings, planMemory, setPlan, updateMeal } = useStore();
   const [generating, setGenerating] = useState(false);
   const [busyCell, setBusyCell] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ w: Weekday; k: MealKey } | null>(null);
+  const [pending, setPending] = useState<PendingChange | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const wide = useWide();
+  const preview = useMemo(() => (pending ? previewMap(pending.changes) : undefined), [pending]);
   if (!profile) return null;
 
   const aiReady = isAiConfigured(settings);
@@ -30,8 +49,9 @@ export default function MealPlan() {
     if (plan && !(await confirmDialog({ title: '重新生成本周计划？', message: '当前周表（包括手动修改）将被替换。', okText: '重新生成' }))) return;
     setGenerating(true);
     try {
-      const raw = await chat(settings, weekPlanMessages(profile, info.weightKg, info.target), { timeoutMs: 60000, json: true });
+      const raw = await chat(settings, weekPlanMessages(profile, info.weightKg, info.target, planMemory), { timeoutMs: 60000, json: true });
       setPlan(parseWeekPlan(raw, info.target));
+      setPending(null);
       toast('新的一周饮食计划已生成 🥗', 'success');
     } catch (e) {
       toast(errorMessage(e), 'error'); // 保留原计划
@@ -91,7 +111,8 @@ export default function MealPlan() {
       )}
 
       {plan && (
-        <>
+        <div className={`plan-layout ${aiReady && wide ? 'with-chat' : ''}`}>
+          <div className="plan-main">
           <div className="plan-head" style={{ marginBottom: 18 }}>
             <div className="plan-stat"><span>计划每日热量</span><b className="num grad-text">{plan.dailyKcalTarget} kcal</b></div>
             <div className="plan-stat"><span>当前热量目标</span><b className="num">{info.target} kcal</b></div>
@@ -100,7 +121,7 @@ export default function MealPlan() {
               <span className="tag tag-slight">体重变化后热量目标已更新，可考虑重新生成</span>
             )}
           </div>
-          <WeekTable plan={plan} today={today} busyCell={busyCell} aiReady={aiReady} onEdit={(w, k) => setEditing({ w, k })} onSwap={swap} />
+          <WeekTable plan={plan} today={today} busyCell={busyCell} aiReady={aiReady} preview={preview} onEdit={(w, k) => setEditing({ w, k })} onSwap={swap} />
 
           {plan.tips && plan.tips.length > 0 && (
             <section className="card mt-24">
@@ -112,6 +133,20 @@ export default function MealPlan() {
               </div>
             </section>
           )}
+          </div>
+
+          {aiReady && wide && <PlanChat variant="panel" pending={pending} onPending={setPending} />}
+        </div>
+      )}
+
+      {plan && aiReady && !wide && (
+        <>
+          <button id="plan-chat-fab" className="chat-fab" onClick={() => setDrawerOpen(true)} aria-label="打开 AI 营养师对话">
+            🧑‍🍳<span>调整食谱</span>
+            {pending && <i className="chat-fab-dot" />}
+          </button>
+          <div className={`chat-backdrop ${drawerOpen ? 'open' : ''}`} onClick={() => setDrawerOpen(false)} />
+          <PlanChat variant="drawer" open={drawerOpen} onClose={() => setDrawerOpen(false)} pending={pending} onPending={setPending} />
         </>
       )}
 

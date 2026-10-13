@@ -1,4 +1,4 @@
-import type { MealKey, WeekPlan, Weekday } from '../types';
+import type { Meal, MealKey, WeekPlan, Weekday } from '../types';
 import { MEAL_EMOJI, MEAL_KEYS, MEAL_LABELS, WEEKDAY_LABELS } from '../types';
 
 interface Props {
@@ -8,11 +8,13 @@ interface Props {
   aiReady: boolean;
   onEdit: (w: Weekday, k: MealKey) => void;
   onSwap: (w: Weekday, k: MealKey) => void;
+  /** 待应用的 AI 修改，key 为 cellId */
+  preview?: Map<string, Meal>;
 }
 
 export const cellId = (w: Weekday, k: MealKey) => `${w}-${k}`;
 
-export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSwap }: Props) {
+export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSwap, preview }: Props) {
   const days = [...plan.days].sort((a, b) => a.weekday - b.weekday);
   const hl = (w: number) => (w === today ? 'is-today' : '');
 
@@ -35,21 +37,24 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
               {MEAL_LABELS[k]}
             </div>
             {days.map((d) => {
-              const m = d.meals[k];
               const id = cellId(d.weekday, k);
+              const next = preview?.get(id);
+              const m = next ?? d.meals[k];
               const busy = busyCell === id;
               return (
                 <div
                   key={id}
                   id={`cell-${id}`}
-                  className={`wk-cell ${hl(d.weekday)} ${busy ? 'busy' : ''}`}
-                  onClick={() => onEdit(d.weekday, k)}
-                  title="点击编辑"
+                  className={`wk-cell ${hl(d.weekday)} ${busy ? 'busy' : ''} ${next ? 'is-preview' : ''}`}
+                  onClick={() => !next && onEdit(d.weekday, k)}
+                  title={next ? `原：${d.meals[k].name}（${d.meals[k].kcal} kcal）` : '点击编辑'}
                 >
+                  {next && <span className="preview-flag">待应用</span>}
                   <div className="wk-name">{m.name}</div>
+                  {next && <div className="wk-old">{d.meals[k].name}</div>}
                   <div className="wk-items">{m.items}</div>
                   <span className="tag tag-kcal num">{m.kcal} kcal</span>
-                  {aiReady && (
+                  {aiReady && !next && (
                     <button
                       className="btn btn-sm btn-violet wk-swap"
                       onClick={(e) => {
@@ -70,11 +75,13 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
           合计
         </div>
         {days.map((d) => {
-          const total = MEAL_KEYS.reduce((s, k) => s + d.meals[k].kcal, 0);
+          const before = MEAL_KEYS.reduce((s, k) => s + d.meals[k].kcal, 0);
+          const total = MEAL_KEYS.reduce((s, k) => s + (preview?.get(cellId(d.weekday, k)) ?? d.meals[k]).kcal, 0);
           const diff = total - plan.dailyKcalTarget;
           const color = Math.abs(diff) <= plan.dailyKcalTarget * 0.05 ? 'var(--ok)' : diff > 0 ? 'var(--over)' : 'var(--sky)';
           return (
             <div key={d.weekday} className={`wk-total num ${hl(d.weekday)}`} style={{ color }}>
+              {total !== before && <span className="wk-total-old">{before} → </span>}
               {total} kcal
             </div>
           );

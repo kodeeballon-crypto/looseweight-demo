@@ -62,4 +62,26 @@ describe('useStore 持久化', () => {
     expect(s2.getState().workoutLog).toEqual({});
     expect(s2.getState().workoutMemory).toEqual([]);
   });
+
+  it('v3 旧数据迁移后补齐 nutritionCache', async () => {
+    mem.set('looseweight-v1', JSON.stringify({ state: { profile: { heightCm: 160 }, records: [], workoutLog: {} }, version: 3 }));
+    const s = await loadStore();
+    expect(s.getState().profile).toEqual({ heightCm: 160 });
+    expect(s.getState().nutritionCache).toEqual({});
+  });
+
+  it('营养分析写入后持久化，只保留最近 14 天，clearAll 清空', async () => {
+    const s1 = await loadStore();
+    for (let d = 1; d <= 16; d++) {
+      const date = `2026-10-${String(d).padStart(2, '0')}`;
+      s1.getState().setNutrition({ date, signature: 's', meals: {}, summary: '好', suggestions: [], at: '' });
+    }
+    const s2 = await loadStore();
+    const dates = Object.keys(s2.getState().nutritionCache).sort();
+    expect(dates).toHaveLength(14);
+    expect(dates[0]).toBe('2026-10-03');
+
+    s2.getState().clearAll();
+    expect(s2.getState().nutritionCache).toEqual({});
+  });
 });

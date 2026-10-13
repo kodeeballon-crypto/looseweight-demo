@@ -6,6 +6,8 @@ import type {
   Meal,
   MealChange,
   MealKey,
+  NutritionAnalysis,
+  NutritionCache,
   PlanChatMessage,
   Profile,
   Settings,
@@ -20,6 +22,7 @@ import type {
 import { sortRecords } from '../domain/calc';
 import { applyMealChanges, mergeMemory, trimChat } from '../domain/planChat';
 import { applyWorkoutChanges as mergeWorkoutChanges, completeAll, toggleDone } from '../domain/workout';
+import { pruneCache } from '../domain/nutrition';
 import { toast } from './toast';
 import type { ExportData } from './dataio';
 
@@ -51,6 +54,8 @@ interface State {
   workoutChat: PlanChatMessage[];
   /** AI 教练提炼的长期训练要求 */
   workoutMemory: string[];
+  /** 今日营养结构的 AI 分析缓存（最近 14 天，不导出） */
+  nutritionCache: NutritionCache;
 
   setProfile: (p: Profile) => void;
   upsertRecord: (r: DailyRecord) => void;
@@ -81,6 +86,7 @@ interface State {
   clearWorkoutChat: () => void;
   updateWorkoutMemory: (add: string[], remove: string[]) => void;
   removeWorkoutMemory: (text: string) => void;
+  setNutrition: (a: NutritionAnalysis) => void;
 }
 
 /** localStorage 写满/不可用时给出提示，而不是静默失败 */
@@ -128,6 +134,7 @@ export const useStore = create<State>()(
       workoutLog: {},
       workoutChat: [],
       workoutMemory: [],
+      nutritionCache: {},
 
       setProfile: (profile) => set({ profile }),
 
@@ -186,6 +193,7 @@ export const useStore = create<State>()(
           workoutLog: d.workoutLog ?? {},
           workoutChat: d.workoutChat ?? [],
           workoutMemory: d.workoutMemory ?? [],
+          nutritionCache: {},
           // 保留本机的 API Key
           settings: d.settings ? { ...get().settings, ...d.settings, apiKey: get().settings.apiKey } : get().settings,
         }),
@@ -204,6 +212,7 @@ export const useStore = create<State>()(
           workoutLog: {},
           workoutChat: [],
           workoutMemory: [],
+          nutritionCache: {},
         }),
 
       setTrainingPrefs: (trainingPrefs) => set({ trainingPrefs }),
@@ -244,23 +253,27 @@ export const useStore = create<State>()(
       updateWorkoutMemory: (add, remove) => set({ workoutMemory: mergeMemory(get().workoutMemory, add, remove) }),
 
       removeWorkoutMemory: (text) => set({ workoutMemory: get().workoutMemory.filter((s) => s !== text) }),
+
+      setNutrition: (a) => set({ nutritionCache: pruneCache({ ...get().nutritionCache, [a.date]: a }) }),
     }),
     {
       name: STORAGE_KEY,
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => safeStorage),
       migrate: (persisted) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
         const arr = (v: unknown) => (Array.isArray(v) ? v : []);
+        const obj = (v: unknown) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
         return {
           ...s,
           planMemory: arr(s.planMemory),
           planChat: arr(s.planChat),
           trainingPrefs: s.trainingPrefs ?? null,
           workoutPlan: s.workoutPlan ?? null,
-          workoutLog: s.workoutLog && typeof s.workoutLog === 'object' && !Array.isArray(s.workoutLog) ? s.workoutLog : {},
+          workoutLog: obj(s.workoutLog),
           workoutChat: arr(s.workoutChat),
           workoutMemory: arr(s.workoutMemory),
+          nutritionCache: obj(s.nutritionCache),
         } as unknown as State;
       },
       partialize: (s) => ({
@@ -276,6 +289,7 @@ export const useStore = create<State>()(
         workoutLog: s.workoutLog,
         workoutChat: s.workoutChat,
         workoutMemory: s.workoutMemory,
+        nutritionCache: s.nutritionCache,
       }),
     },
   ),

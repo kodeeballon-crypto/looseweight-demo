@@ -25,6 +25,11 @@ export default function DataManage() {
       seenBadges: s.seenBadges,
       planMemory: s.planMemory,
       planChat: s.planChat,
+      trainingPrefs: s.trainingPrefs,
+      workoutPlan: s.workoutPlan,
+      workoutLog: s.workoutLog,
+      workoutChat: s.workoutChat,
+      workoutMemory: s.workoutMemory,
       settings: safeSettings,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -61,7 +66,7 @@ export default function DataManage() {
   const doClear = async () => {
     const ok1 = await confirmDialog({
       title: '清空所有数据？',
-      message: `将删除档案、${count} 条打卡记录、饮食计划和 AI 配置。此操作无法撤销，建议先导出备份。`,
+      message: `将删除档案、${count} 条打卡记录、饮食与训练计划和 AI 配置。此操作无法撤销，建议先导出备份。`,
       okText: '我确定要清空',
       danger: true,
     });

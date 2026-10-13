@@ -1,8 +1,25 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
-import type { DailyRecord, Meal, MealChange, MealKey, PlanChatMessage, Profile, Settings, WeekPlan, Weekday } from '../types';
+import type {
+  DailyRecord,
+  Exercise,
+  Meal,
+  MealChange,
+  MealKey,
+  PlanChatMessage,
+  Profile,
+  Settings,
+  TrainingPrefs,
+  WeekPlan,
+  Weekday,
+  WorkoutChange,
+  WorkoutDay,
+  WorkoutLog,
+  WorkoutPlan,
+} from '../types';
 import { sortRecords } from '../domain/calc';
 import { applyMealChanges, mergeMemory, trimChat } from '../domain/planChat';
+import { applyWorkoutChanges as mergeWorkoutChanges, completeAll, toggleDone } from '../domain/workout';
 import { toast } from './toast';
 import type { ExportData } from './dataio';
 
@@ -25,6 +42,15 @@ interface State {
   planMemory: string[];
   /** 饮食周表 AI 对话记录（最近 30 条） */
   planChat: PlanChatMessage[];
+  /** 训练条件（首次生成前填写） */
+  trainingPrefs: TrainingPrefs | null;
+  workoutPlan: WorkoutPlan | null;
+  /** 每天已完成动作的快照 */
+  workoutLog: WorkoutLog;
+  /** AI 教练对话记录（最近 30 条） */
+  workoutChat: PlanChatMessage[];
+  /** AI 教练提炼的长期训练要求 */
+  workoutMemory: string[];
 
   setProfile: (p: Profile) => void;
   upsertRecord: (r: DailyRecord) => void;
@@ -42,6 +68,19 @@ interface State {
   markBadgesSeen: (ids: string[]) => void;
   importData: (d: ExportData) => void;
   clearAll: () => void;
+
+  setTrainingPrefs: (p: TrainingPrefs) => void;
+  setWorkoutPlan: (p: WorkoutPlan) => void;
+  updateWorkoutDay: (weekday: Weekday, day: WorkoutDay) => void;
+  updateExercise: (weekday: Weekday, id: string, ex: Exercise) => void;
+  applyWorkoutChanges: (changes: WorkoutChange[]) => void;
+  toggleExercise: (date: string, ex: Exercise) => void;
+  completeToday: (date: string, exercises: Exercise[]) => void;
+  appendWorkoutChat: (m: PlanChatMessage) => void;
+  markWorkoutChatApplied: (id: string) => void;
+  clearWorkoutChat: () => void;
+  updateWorkoutMemory: (add: string[], remove: string[]) => void;
+  removeWorkoutMemory: (text: string) => void;
 }
 
 /** localStorage 写满/不可用时给出提示，而不是静默失败 */
@@ -84,6 +123,11 @@ export const useStore = create<State>()(
       seenBadges: [],
       planMemory: [],
       planChat: [],
+      trainingPrefs: null,
+      workoutPlan: null,
+      workoutLog: {},
+      workoutChat: [],
+      workoutMemory: [],
 
       setProfile: (profile) => set({ profile }),
 
@@ -137,20 +181,87 @@ export const useStore = create<State>()(
           seenBadges: d.seenBadges,
           planMemory: d.planMemory ?? [],
           planChat: d.planChat ?? [],
+          trainingPrefs: d.trainingPrefs ?? null,
+          workoutPlan: d.workoutPlan ?? null,
+          workoutLog: d.workoutLog ?? {},
+          workoutChat: d.workoutChat ?? [],
+          workoutMemory: d.workoutMemory ?? [],
           // 保留本机的 API Key
           settings: d.settings ? { ...get().settings, ...d.settings, apiKey: get().settings.apiKey } : get().settings,
         }),
 
       clearAll: () =>
-        set({ profile: null, records: [], plan: null, seenBadges: [], planMemory: [], planChat: [], settings: DEFAULT_SETTINGS }),
+        set({
+          profile: null,
+          records: [],
+          plan: null,
+          seenBadges: [],
+          planMemory: [],
+          planChat: [],
+          settings: DEFAULT_SETTINGS,
+          trainingPrefs: null,
+          workoutPlan: null,
+          workoutLog: {},
+          workoutChat: [],
+          workoutMemory: [],
+        }),
+
+      setTrainingPrefs: (trainingPrefs) => set({ trainingPrefs }),
+
+      setWorkoutPlan: (workoutPlan) => set({ workoutPlan }),
+
+      updateWorkoutDay: (weekday, day) => {
+        const p = get().workoutPlan;
+        if (p) set({ workoutPlan: mergeWorkoutChanges(p, [{ weekday, next: day }]) });
+      },
+
+      updateExercise: (weekday, id, ex) => {
+        const p = get().workoutPlan;
+        if (!p) return;
+        set({
+          workoutPlan: {
+            ...p,
+            days: p.days.map((d) => (d.weekday === weekday ? { ...d, exercises: d.exercises.map((e) => (e.id === id ? ex : e)) } : d)),
+          },
+        });
+      },
+
+      applyWorkoutChanges: (changes) => {
+        const p = get().workoutPlan;
+        if (p) set({ workoutPlan: mergeWorkoutChanges(p, changes) });
+      },
+
+      toggleExercise: (date, ex) => set({ workoutLog: toggleDone(get().workoutLog, date, ex) }),
+
+      completeToday: (date, exercises) => set({ workoutLog: completeAll(get().workoutLog, date, exercises) }),
+
+      appendWorkoutChat: (m) => set({ workoutChat: trimChat([...get().workoutChat, m]) }),
+
+      markWorkoutChatApplied: (id) => set({ workoutChat: get().workoutChat.map((m) => (m.id === id ? { ...m, applied: true } : m)) }),
+
+      clearWorkoutChat: () => set({ workoutChat: [] }),
+
+      updateWorkoutMemory: (add, remove) => set({ workoutMemory: mergeMemory(get().workoutMemory, add, remove) }),
+
+      removeWorkoutMemory: (text) => set({ workoutMemory: get().workoutMemory.filter((s) => s !== text) }),
     }),
     {
       name: STORAGE_KEY,
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => safeStorage),
       migrate: (persisted) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
-        return { ...s, planMemory: Array.isArray(s.planMemory) ? s.planMemory : [], planChat: Array.isArray(s.planChat) ? s.planChat : [] } as unknown as State;
+        const arr = (v: unknown) => (Array.isArray(v) ? v : []);
+        return {
+          ...s,
+          planMemory: arr(s.planMemory),
+          planChat: arr(s.planChat),
+          trainingPrefs: s.trainingPrefs ?? null,
+          workoutPlan: s.workoutPlan ?? null,
+          workoutLog: s.workoutLog && typeof s.workoutLog === 'object' && !Array.isArray(s.workoutLog) ? s.workoutLog : {},
+          workoutChat: arr(s.workoutChat),
+          workoutMemory: arr(s.workoutMemory),
+        } as unknown as State;
       },
       partialize: (s) => ({
         profile: s.profile,
@@ -160,6 +271,11 @@ export const useStore = create<State>()(
         seenBadges: s.seenBadges,
         planMemory: s.planMemory,
         planChat: s.planChat,
+        trainingPrefs: s.trainingPrefs,
+        workoutPlan: s.workoutPlan,
+        workoutLog: s.workoutLog,
+        workoutChat: s.workoutChat,
+        workoutMemory: s.workoutMemory,
       }),
     },
   ),

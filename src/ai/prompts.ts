@@ -1,7 +1,8 @@
 import type { ChatMessage } from './client';
-import type { DailyRecord, KcalStatus, Meal, MealKey, Profile } from '../types';
-import { MEAL_LABELS } from '../types';
+import type { DailyRecord, KcalStatus, Meal, MealKey, PlanChatMessage, Profile, WeekPlan } from '../types';
+import { MEAL_KEYS, MEAL_LABELS, WEEKDAY_LABELS } from '../types';
 import { ACTIVITY_LABELS, KCAL_STATUS_LABEL, bmiLevel, calcBmi, round1 } from '../domain/calc';
+import { lifestyleOf, lifestyleText } from '../domain/lifestyle';
 
 const SEX_LABEL = { male: '男', female: '女' } as const;
 
@@ -26,8 +27,9 @@ const WEEK_EXAMPLE = `{
   "tips": ["要点1", "要点2", "要点3"]
 }`;
 
-export function weekPlanMessages(profile: Profile, currentWeight: number, kcalTarget: number): ChatMessage[] {
+export function weekPlanMessages(profile: Profile, currentWeight: number, kcalTarget: number, memory: string[] = []): ChatMessage[] {
   const bmi = calcBmi(currentWeight, profile.heightCm);
+  const memoryBlock = memory.length ? `\n【长期要求】（必须遵守）\n${memory.map((s) => `- ${s}`).join('\n')}\n` : '';
   const user = `请为我制定一周（周一到周日）的减脂饮食计划。
 
 【个人信息】
@@ -41,16 +43,20 @@ export function weekPlanMessages(profile: Profile, currentWeight: number, kcalTa
 - 每日热量目标：${kcalTarget} kcal
 - 饮食偏好/忌口：${profile.preferences?.trim() || '无特别要求'}
 
+【生活节奏】
+${lifestyleText(lifestyleOf(profile))}
+${memoryBlock}
 【要求】
 1. 每天 4 餐：breakfast（早餐）、lunch（午餐）、dinner（晚餐）、snack（加餐）。
 2. 每天四餐总热量控制在 ${Math.round(kcalTarget * 0.95)}–${Math.round(kcalTarget * 1.05)} kcal 之间。
-3. 使用中国家常、容易买到的食材，做法简单，也要外卖友好（午餐可以是能点到的外卖）。
-4. 高蛋白、适量优质碳水、多蔬菜，少油少糖少盐。
-5. 7 天菜品尽量不重复。
-6. items 字段写清楚每种食材的份量（克/毫升/个）。
-7. kcal 为该餐热量的整数估算。
-8. tips 给出本周 3 条以内简短实用的要点。
-9. days 数组必须正好 7 项，weekday 依次为 1–7（周一=1）。
+3. 严格按【生活节奏】安排工作日（周一–周五）：买现成的早餐写便利店/早餐铺能直接买到的组合；外卖/食堂午餐写能直接点到的菜，并在 items 末尾用括号给出点餐要点（如“米饭减半、少油”）；晚餐做法不超过限定时长。
+4. 周末可以稍复杂，但单餐备餐不超过 30 分钟（晚餐时间“不限”时除外）。不要出现需要特殊食材、长时间备料的菜。
+5. 高蛋白、适量优质碳水、多蔬菜，少油少糖少盐；加餐优先选择可直接买到、无需处理的食物。
+6. 7 天菜品不必完全不重复，工作日早餐/加餐可以在 2–3 种组合间轮换，降低采购和决策成本。
+7. items 用生活化份量（一盒、一个、一拳头、半碗）并附大致克数，不要求精确称重。
+8. kcal 为该餐热量的整数估算。
+9. tips 给出本周 3 条以内简短实用的要点（如周末批量准备、点外卖技巧）。
+10. days 数组必须正好 7 项，weekday 依次为 1–7（周一=1）。
 
 【输出 JSON 结构示例（只示意 1 天，你需要输出完整 7 天）】
 ${WEEK_EXAMPLE}`;
@@ -92,6 +98,59 @@ ${others || '- 无'}
   return [
     { role: 'system', content: WEEK_SYSTEM },
     { role: 'user', content: user },
+  ];
+}
+
+// ---------- 7.4 对话调整周表 ----------
+
+/** 周表压缩为 28 行文本：周一 早餐｜名称｜份量｜kcal */
+export function planToText(plan: WeekPlan): string {
+  const days = [...plan.days].sort((a, b) => a.weekday - b.weekday);
+  return days
+    .flatMap((d) => MEAL_KEYS.map((k) => `${WEEKDAY_LABELS[d.weekday - 1]} ${MEAL_LABELS[k]}｜${d.meals[k].name}｜${d.meals[k].items}｜${d.meals[k].kcal}`))
+    .join('\n');
+}
+
+export const CHAT_HISTORY_MAX = 6;
+
+export interface AdjustInput {
+  profile: Profile;
+  kcalTarget: number;
+  plan: WeekPlan;
+  memory: string[];
+  history: PlanChatMessage[];
+  userText: string;
+}
+
+const ADJUST_SYSTEM = `${WEEK_SYSTEM}
+你同时是用户的饮食顾问，会根据用户反馈的实际情况（作息、预算、口味、身体感受）对现有周表做最小必要的修改。`;
+
+export function adjustPlanMessages({ profile, kcalTarget, plan, memory, history, userText }: AdjustInput): ChatMessage[] {
+  const ctx = `【个人信息】${SEX_LABEL[profile.sex]}，${profile.age} 岁，目标体重 ${profile.targetWeightKg} kg，每日热量目标 ${kcalTarget} kcal
+【饮食偏好/忌口】${profile.preferences?.trim() || '无特别要求'}
+【生活节奏】${lifestyleText(lifestyleOf(profile))}
+【长期要求】${memory.length ? memory.join('；') : '暂无'}
+
+【当前周表】（星期 餐次｜菜名｜份量｜kcal）
+${planToText(plan)}
+
+【我的新反馈】
+${userText}
+
+【要求】
+1. 只修改与我的反馈相关的格子，不相关的不要动；不需要修改时 changes 为空数组。
+2. 修改后每天四餐总热量保持在 ${Math.round(kcalTarget * 0.95)}–${Math.round(kcalTarget * 1.05)} kcal；必要时可同时调整当天其他餐来平衡，并在 reply 中说明。
+3. 新菜品必须符合生活节奏与长期要求，食材易得、做法现实，items 用生活化份量并附大致克数。
+4. 如果我表达了长期适用的约束（如“工作日不做早饭”“不吃牛肉”），写入 memoryAdd（每条不超过 20 字）；如果我撤销了某条已有长期要求，把原文写入 memoryRemove。一次性情况（如“周三聚餐”）不要写入记忆。
+5. reply 用 40–120 字口语化说明改了什么、为什么。
+6. weekday 为 1–7（周一=1），meal 为 breakfast/lunch/dinner/snack。
+
+只输出 JSON：{ "reply": "说明", "changes": [{ "weekday": 1, "meal": "breakfast", "name": "菜名", "items": "份量", "kcal": 整数 }], "memoryAdd": [], "memoryRemove": [] }`;
+
+  return [
+    { role: 'system', content: ADJUST_SYSTEM },
+    ...history.slice(-CHAT_HISTORY_MAX).map((h) => ({ role: h.role, content: h.text }) as ChatMessage),
+    { role: 'user', content: ctx },
   ];
 }
 

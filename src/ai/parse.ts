@@ -1,4 +1,4 @@
-import type { Meal, MealKey, WeekPlan, DayPlan, Weekday } from '../types';
+import type { Meal, MealChange, MealKey, PlanAdjustment, WeekPlan, DayPlan, Weekday } from '../types';
 import { MEAL_KEYS } from '../types';
 
 export class ParseError extends Error {
@@ -104,4 +104,47 @@ export function parseEncouragement(text: string): string {
   const plain = text.replace(/```[a-z]*|```/gi, '').trim();
   if (!plain) throw new ParseError();
   return plain;
+}
+
+const MEMORY_ITEM_MAX = 30;
+const MEMORY_BATCH_MAX = 5;
+
+function toStrList(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((s): s is string => typeof s === 'string' && s.trim() !== '')
+    .map((s) => s.trim().slice(0, MEMORY_ITEM_MAX))
+    .slice(0, MEMORY_BATCH_MAX);
+}
+
+function toWeekday(v: unknown): Weekday | null {
+  const n = typeof v === 'string' ? Number(v) : v;
+  return typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 7 ? (n as Weekday) : null;
+}
+
+/** 解析对话调整方案：reply 必须有；非法改动条目丢弃；同一格取最后一条 */
+export function parsePlanAdjustment(text: string): PlanAdjustment {
+  const data = extractJson(text) as Record<string, unknown>;
+  const reply = typeof data?.reply === 'string' ? data.reply.trim() : '';
+  if (!reply) throw new ParseError();
+
+  const byCell = new Map<string, MealChange>();
+  for (const raw of Array.isArray(data.changes) ? data.changes : []) {
+    if (!raw || typeof raw !== 'object') continue;
+    const o = raw as Record<string, unknown>;
+    const weekday = toWeekday(o.weekday);
+    const meal = MEAL_KEYS.find((k) => k === o.meal);
+    const next = normalizeMeal(o.next ?? o);
+    if (!weekday || !meal || !next || next.kcal < 30 || next.kcal > 1500) continue;
+    const id = `${weekday}-${meal}`;
+    byCell.delete(id); // 保证顺序为最后出现的位置
+    byCell.set(id, { weekday, meal, next });
+  }
+
+  return {
+    reply,
+    changes: [...byCell.values()],
+    memoryAdd: toStrList(data.memoryAdd),
+    memoryRemove: toStrList(data.memoryRemove),
+  };
 }

@@ -3,6 +3,28 @@
 个人自用的减重 Web 应用：每日体重打卡 → 趋势图表与统计 → AI 一周减脂饮食周表 + 训练周表 → 打卡后自动算热量（摄入 − 训练消耗）并送上鼓励。
 数据只保存在本机浏览器（localStorage，key：`looseweight-v1`）。
 
+## 效果展示
+
+**今日** · 体重打卡、热量圆环（外圈净摄入 / 内圈红色训练消耗）、今日完成情况
+
+![今日](docs/screenshots/dashboard.png)
+
+**AI 饮食周表** · 7 天 × 4 餐，右侧 AI 营养师对话调整食谱
+
+![饮食周表](docs/screenshots/meal-plan.png)
+
+**今日营养结构** · 三大营养素热量占比饼图、偏低/合适/偏高评级、AI 点评与建议
+
+![今日营养结构](docs/screenshots/nutrition.png)
+
+**AI 训练周表** · 勾选今日动作，消耗同步首页；右侧 AI 教练按天调整计划
+
+![训练周表](docs/screenshots/workout.png)
+
+**个人档案** · 生活节奏决定食谱难度，自动计算 BMI / BMR / TDEE / 每日热量目标
+
+![个人档案](docs/screenshots/settings.png)
+
 ## 启动
 
 ```powershell

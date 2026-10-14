@@ -101,28 +101,28 @@ export function KcalChart({ records, plan, target, log = {} }: { records: DailyR
         },
         ...(hasBurn
           ? [
-              {
-                name: '训练消耗',
-                type: 'bar' as const,
-                barMaxWidth: 22,
-                data: rows.map((r) => r.burned),
-                itemStyle: {
-                  color: { type: 'linear' as const, x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: BURN_C1 }, { offset: 1, color: BURN_C2 }] },
-                  borderRadius: [8, 8, 2, 2],
-                  shadowBlur: 8,
-                  shadowColor: BURN_C1 + '44',
-                },
+            {
+              name: '训练消耗',
+              type: 'bar' as const,
+              barMaxWidth: 22,
+              data: rows.map((r) => r.burned),
+              itemStyle: {
+                color: { type: 'linear' as const, x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: BURN_C1 }, { offset: 1, color: BURN_C2 }] },
+                borderRadius: [8, 8, 2, 2],
+                shadowBlur: 8,
+                shadowColor: BURN_C1 + '44',
               },
-              {
-                name: '净摄入',
-                type: 'line' as const,
-                data: rows.map((r) => r.net),
-                symbol: 'circle',
-                symbolSize: 7,
-                lineStyle: { width: 2, color: '#2c211b' },
-                itemStyle: { color: '#2c211b', borderColor: '#ffffff', borderWidth: 2 },
-              },
-            ]
+            },
+            {
+              name: '净摄入',
+              type: 'line' as const,
+              data: rows.map((r) => r.net),
+              symbol: 'circle',
+              symbolSize: 7,
+              lineStyle: { width: 2, color: '#2c211b' },
+              itemStyle: { color: '#2c211b', borderColor: '#ffffff', borderWidth: 2 },
+            },
+          ]
           : []),
       ],
     };

@@ -12,9 +12,9 @@ export default function MacroPie({ macros }: { macros: Macros }) {
     return {
       tooltip: {
         trigger: 'item',
-        backgroundColor: 'rgba(15,22,48,0.95)',
-        borderColor: 'rgba(255,255,255,0.15)',
-        textStyle: { color: '#eef2ff' },
+        backgroundColor: 'rgba(255, 252, 248, 0.96)',
+        borderColor: 'rgba(185, 115, 70, 0.24)',
+        textStyle: { color: '#2c211b' },
         formatter: (p) => {
           const it = p as unknown as { name: string; value: number; percent: number; data: { g: number } };
           return `${it.name}<br/>${it.data.g} g · ${Math.round(it.value)} kcal · ${Math.round(it.percent)}%`;
@@ -25,8 +25,8 @@ export default function MacroPie({ macros }: { macros: Macros }) {
         subtext: 'kcal',
         left: 'center',
         top: '38%',
-        textStyle: { color: '#eef2ff', fontSize: 26, fontWeight: 600, fontFamily: 'Outfit, sans-serif' },
-        subtextStyle: { color: '#8b93b3', fontSize: 12 },
+        textStyle: { color: '#2c211b', fontSize: 26, fontWeight: 600, fontFamily: 'Outfit, sans-serif' },
+        subtextStyle: { color: '#6e584c', fontSize: 12 },
         itemGap: 2,
       },
       series: [

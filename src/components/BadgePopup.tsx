@@ -13,7 +13,7 @@ export function showBadges(badges: Badge[]) {
   if (badges.length) useBadgeQueue.getState().set(badges);
 }
 
-const COLORS = ['#34e0a1', '#22c7e8', '#8b7cff', '#ffc24b', '#ff6b8b', '#5aa9ff'];
+const COLORS = ['#ff7849', '#ffa94d', '#12b886', '#f59f00', '#f06595', '#339af0'];
 
 function Confetti() {
   const pieces = useMemo(

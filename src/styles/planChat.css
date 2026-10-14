@@ -20,9 +20,9 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background:
-    radial-gradient(120% 60% at 100% 0%, rgba(139, 124, 255, 0.16), transparent 60%),
-    radial-gradient(100% 50% at 0% 100%, rgba(52, 224, 161, 0.1), transparent 60%),
-    rgba(10, 15, 32, 0.78);
+    radial-gradient(120% 60% at 100% 0%, rgba(255, 107, 139, 0.11), transparent 60%),
+    radial-gradient(100% 50% at 0% 100%, rgba(18, 184, 134, 0.08), transparent 60%),
+    rgba(255, 253, 250, 0.94);
   backdrop-filter: blur(18px);
   box-shadow: var(--shadow);
   overflow: hidden;
@@ -51,7 +51,7 @@
   position: fixed;
   inset: 0;
   z-index: 59;
-  background: rgba(3, 6, 16, 0.55);
+  background: rgba(44, 33, 27, 0.32);
   backdrop-filter: blur(3px);
   opacity: 0;
   pointer-events: none;
@@ -78,7 +78,7 @@
   font-size: 20px;
   border-radius: 13px;
   background: var(--grad-violet);
-  box-shadow: 0 8px 22px -8px rgba(139, 124, 255, 0.8);
+  box-shadow: 0 8px 20px -8px rgba(255, 107, 139, 0.65);
 }
 .chat-title {
   flex: 1;
@@ -97,7 +97,7 @@
   height: 32px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--surface-2);
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
@@ -130,9 +130,10 @@
 }
 .chip-memory {
   padding: 4px 6px 4px 10px;
-  background: rgba(255, 194, 75, 0.12);
-  border: 1px solid rgba(255, 194, 75, 0.35);
-  color: #ffd98a;
+  background: rgba(245, 159, 0, 0.14);
+  border: 1px solid rgba(245, 159, 0, 0.35);
+  color: #b45309;
+  font-weight: 500;
   animation: pop 0.4s var(--ease) both;
 }
 .chip-memory button {
@@ -185,31 +186,34 @@
 }
 .bubble-user {
   align-self: flex-end;
-  color: #052a1e;
+  color: #ffffff;
   font-weight: 500;
   background: var(--grad-primary);
+  box-shadow: 0 4px 14px -4px rgba(255, 120, 73, 0.45);
   border-bottom-right-radius: 5px;
 }
 .bubble-assistant {
   align-self: flex-start;
-  background: var(--surface-2);
+  background: #ffffff;
   border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(180, 105, 55, 0.06);
   border-bottom-left-radius: 5px;
 }
 .bubble-error {
   align-self: flex-start;
-  background: rgba(255, 107, 139, 0.1);
-  border: 1px solid rgba(255, 107, 139, 0.35);
-  color: #ffb3c3;
+  background: #fff5f5;
+  border: 1px solid rgba(240, 62, 62, 0.35);
+  color: #c92a2a;
 }
 .bubble-meta {
   display: block;
   margin-top: 6px;
   font-size: 11.5px;
-  color: var(--violet);
+  color: #d6336c;
+  font-weight: 500;
 }
 .bubble-meta.is-applied {
-  color: var(--ok);
+  color: #099268;
 }
 .bubble-typing {
   display: inline-flex;
@@ -246,8 +250,8 @@
 .change-card {
   padding: 12px;
   border-radius: 14px;
-  border: 1px dashed rgba(139, 124, 255, 0.6);
-  background: rgba(139, 124, 255, 0.08);
+  border: 1px dashed rgba(240, 101, 149, 0.55);
+  background: rgba(240, 101, 149, 0.08);
   animation: fadeUp 0.4s var(--ease) both;
 }
 .change-card-title {
@@ -272,7 +276,7 @@
   font-size: 12.5px;
 }
 .change-where {
-  color: var(--violet);
+  color: #d6336c;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -284,10 +288,10 @@
   color: var(--text-3);
 }
 .change-kcal.up {
-  color: var(--slight);
+  color: #d97706;
 }
 .change-kcal.down {
-  color: var(--sky);
+  color: #099268;
 }
 .change-totals {
   display: flex;
@@ -318,15 +322,15 @@
 .chip-quick {
   padding: 5px 11px;
   border: 1px solid var(--border-strong);
-  background: var(--surface);
+  background: #ffffff;
   color: var(--text-2);
   cursor: pointer;
   transition: all 0.2s var(--ease);
 }
 .chip-quick:hover:not(:disabled) {
-  color: var(--text);
-  border-color: rgba(52, 224, 161, 0.5);
-  background: rgba(52, 224, 161, 0.1);
+  color: #d9480f;
+  border-color: rgba(255, 120, 73, 0.5);
+  background: rgba(255, 120, 73, 0.1);
   transform: translateY(-1px);
 }
 .chip-quick:disabled {
@@ -344,16 +348,16 @@
   resize: none;
   padding: 10px 12px;
   border-radius: 14px;
-  border: 1px solid var(--border);
-  background: rgba(5, 9, 22, 0.6);
+  border: 1px solid var(--border-strong);
+  background: #ffffff;
   font-size: 13.5px;
   line-height: 1.5;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .chat-input:focus {
-  border-color: rgba(52, 224, 161, 0.55);
-  box-shadow: 0 0 0 3px rgba(52, 224, 161, 0.15);
+  border-color: rgba(255, 120, 73, 0.65);
+  box-shadow: 0 0 0 3px rgba(255, 120, 73, 0.16);
 }
 .chat-send {
   width: 42px;
@@ -364,9 +368,10 @@
   border: none;
   border-radius: 14px;
   background: var(--grad-primary);
-  color: #052a1e;
+  color: #ffffff;
   font-size: 16px;
   cursor: pointer;
+  box-shadow: 0 6px 16px -6px rgba(255, 120, 73, 0.6);
   transition: transform 0.2s var(--ease), opacity 0.2s;
 }
 .chat-send:hover:not(:disabled) {
@@ -394,7 +399,7 @@
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 14px 34px -10px rgba(139, 124, 255, 0.9);
+  box-shadow: 0 14px 32px -10px rgba(255, 107, 139, 0.75);
   animation: pop 0.5s var(--ease) both;
   transition: transform 0.2s var(--ease);
 }
@@ -412,20 +417,20 @@
   height: 10px;
   border-radius: 50%;
   background: var(--amber);
-  box-shadow: 0 0 0 3px rgba(255, 194, 75, 0.3);
+  box-shadow: 0 0 0 3px rgba(245, 159, 0, 0.3);
   animation: pulse 1.2s ease-in-out infinite;
 }
 
 /* ---------- 周表预览高亮 ---------- */
 .wk-cell.is-preview {
   cursor: default;
-  background: rgba(139, 124, 255, 0.12);
-  box-shadow: inset 0 0 0 2px rgba(139, 124, 255, 0.7);
+  background: rgba(240, 101, 149, 0.1);
+  box-shadow: inset 0 0 0 2px rgba(240, 101, 149, 0.65);
   animation: previewGlow 1.8s ease-in-out infinite;
 }
 @keyframes previewGlow {
   50% {
-    background: rgba(139, 124, 255, 0.2);
+    background: rgba(240, 101, 149, 0.18);
   }
 }
 .preview-flag {
@@ -455,7 +460,7 @@
   padding: 14px;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: rgba(5, 9, 22, 0.35);
+  background: #fffcf8;
 }
 .lifestyle-row {
   display: flex;

@@ -194,7 +194,7 @@ export default function ProfileForm({ initial, currentWeight, onSave, saveLabel 
           <span>每日消耗 TDEE</span>
           <b className="num">{tdee ? Math.round(tdee) : '--'}</b> <small className="faint">kcal</small>
         </div>
-        <div className="live-metric" style={{ borderColor: 'rgba(52,224,161,.4)' }}>
+        <div className="live-metric" style={{ borderColor: 'rgba(255,120,73,.4)' }}>
           <span>每日热量目标</span>
           <b className="num grad-text">{target ?? '--'}</b> <small className="faint">kcal</small>
         </div>

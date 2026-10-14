@@ -78,7 +78,7 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
           const before = MEAL_KEYS.reduce((s, k) => s + d.meals[k].kcal, 0);
           const total = MEAL_KEYS.reduce((s, k) => s + (preview?.get(cellId(d.weekday, k)) ?? d.meals[k]).kcal, 0);
           const diff = total - plan.dailyKcalTarget;
-          const color = Math.abs(diff) <= plan.dailyKcalTarget * 0.05 ? 'var(--ok)' : diff > 0 ? 'var(--over)' : 'var(--sky)';
+          const color = Math.abs(diff) <= plan.dailyKcalTarget * 0.05 ? 'var(--ok-text)' : diff > 0 ? 'var(--over-text)' : 'var(--sky-text)';
           return (
             <div key={d.weekday} className={`wk-total num ${hl(d.weekday)}`} style={{ color }}>
               {total !== before && <span className="wk-total-old">{before} → </span>}

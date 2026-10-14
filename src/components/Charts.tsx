@@ -6,14 +6,14 @@ import { intakeOf, kcalStatus, movingAverage7, hasIntakeData } from '../domain/c
 import { burnedOn, netIntake } from '../domain/workout';
 import { BURN_C1, BURN_C2 } from './BurnRing';
 
-const AXIS = { lineStyle: { color: 'rgba(255,255,255,0.12)' } };
-const SPLIT = { lineStyle: { color: 'rgba(255,255,255,0.06)' } };
-const LABEL = { color: '#8b93b3' };
+const AXIS = { lineStyle: { color: 'rgba(185, 115, 70, 0.22)' } };
+const SPLIT = { lineStyle: { color: 'rgba(185, 115, 70, 0.1)' } };
+const LABEL = { color: '#6e584c' };
 const TOOLTIP = {
   trigger: 'axis' as const,
-  backgroundColor: 'rgba(15,22,48,0.95)',
-  borderColor: 'rgba(255,255,255,0.15)',
-  textStyle: { color: '#eef2ff' },
+  backgroundColor: 'rgba(255, 252, 248, 0.96)',
+  borderColor: 'rgba(185, 115, 70, 0.24)',
+  textStyle: { color: '#2c211b' },
 };
 
 export function WeightChart({ records, target }: { records: DailyRecord[]; target: number }) {
@@ -35,13 +35,13 @@ export function WeightChart({ records, target }: { records: DailyRecord[]; targe
           data: records.map((r) => [r.date, r.weightKg]),
           symbol: 'circle',
           symbolSize: 7,
-          lineStyle: { width: 1.5, color: 'rgba(34,199,232,0.55)' },
-          itemStyle: { color: '#22c7e8', borderColor: '#0a0f1e', borderWidth: 2 },
+          lineStyle: { width: 1.5, color: 'rgba(255, 120, 73, 0.55)' },
+          itemStyle: { color: '#ff7849', borderColor: '#ffffff', borderWidth: 2 },
           markLine: {
             symbol: 'none',
             silent: true,
-            label: { formatter: `目标 ${target} kg`, color: '#ffc24b', position: 'insideEndTop' },
-            lineStyle: { color: '#ffc24b', type: 'dashed', width: 1.5 },
+            label: { formatter: `目标 ${target} kg`, color: '#099268', position: 'insideEndTop' },
+            lineStyle: { color: '#12b886', type: 'dashed', width: 1.5 },
             data: [{ yAxis: target }],
           },
         },
@@ -51,10 +51,10 @@ export function WeightChart({ records, target }: { records: DailyRecord[]; targe
           smooth: true,
           showSymbol: false,
           data: avg.map((a) => [a.date, a.avg]),
-          lineStyle: { width: 4, color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0, colorStops: [{ offset: 0, color: '#34e0a1' }, { offset: 1, color: '#8b7cff' }] } },
-          itemStyle: { color: '#34e0a1' },
+          lineStyle: { width: 4, color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0, colorStops: [{ offset: 0, color: '#ff7849' }, { offset: 1, color: '#12b886' }] } },
+          itemStyle: { color: '#ff7849' },
           areaStyle: {
-            color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(52,224,161,0.25)' }, { offset: 1, color: 'rgba(52,224,161,0)' }] },
+            color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(255, 120, 73, 0.22)' }, { offset: 1, color: 'rgba(255, 120, 73, 0)' }] },
           },
         },
       ],
@@ -63,7 +63,7 @@ export function WeightChart({ records, target }: { records: DailyRecord[]; targe
   return <EChart option={option} className="chart-box" />;
 }
 
-const BAR: Record<KcalStatus, string> = { ok: '#34e0a1', slight: '#ffc24b', over: '#ff6b8b' };
+const BAR: Record<KcalStatus, string> = { ok: '#12b886', slight: '#f59f00', over: '#f03e3e' };
 
 /** 柱：摄入（按净摄入状态着色）+ 红色训练消耗；线：净摄入 */
 export function KcalChart({ records, plan, target, log = {} }: { records: DailyRecord[]; plan: WeekPlan | null; target: number; log?: WorkoutLog }) {
@@ -94,8 +94,8 @@ export function KcalChart({ records, plan, target, log = {} }: { records: DailyR
           markLine: {
             symbol: 'none',
             silent: true,
-            label: { formatter: `目标 ${target}`, color: '#a8b1cf', position: 'insideEndTop' },
-            lineStyle: { color: '#8b7cff', type: 'dashed', width: 1.5 },
+            label: { formatter: `目标 ${target}`, color: '#6e584c', position: 'insideEndTop' },
+            lineStyle: { color: '#ff7849', type: 'dashed', width: 1.5 },
             data: [{ yAxis: target }],
           },
         },
@@ -109,8 +109,8 @@ export function KcalChart({ records, plan, target, log = {} }: { records: DailyR
                 itemStyle: {
                   color: { type: 'linear' as const, x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: BURN_C1 }, { offset: 1, color: BURN_C2 }] },
                   borderRadius: [8, 8, 2, 2],
-                  shadowBlur: 10,
-                  shadowColor: BURN_C1 + '66',
+                  shadowBlur: 8,
+                  shadowColor: BURN_C1 + '44',
                 },
               },
               {
@@ -119,8 +119,8 @@ export function KcalChart({ records, plan, target, log = {} }: { records: DailyR
                 data: rows.map((r) => r.net),
                 symbol: 'circle',
                 symbolSize: 7,
-                lineStyle: { width: 1.5, color: '#eef2ff' },
-                itemStyle: { color: '#eef2ff', borderColor: '#0a0f1e', borderWidth: 2 },
+                lineStyle: { width: 2, color: '#2c211b' },
+                itemStyle: { color: '#2c211b', borderColor: '#ffffff', borderWidth: 2 },
               },
             ]
           : []),

@@ -15,7 +15,7 @@ import GoalProgress from '../components/GoalProgress';
 import TodayProgress from '../components/TodayProgress';
 import { showBadges } from '../components/BadgePopup';
 
-const BMI_COLOR = { under: '#5aa9ff', normal: '#34e0a1', over: '#ffc24b', obese: '#ff6b8b' } as const;
+const BMI_COLOR = { under: '#228be6', normal: '#0ca678', over: '#e67700', obese: '#e03131' } as const;
 const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 
 function greeting() {
@@ -82,14 +82,14 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-4">
-        <MetricCard id="m-weight" label="⚖️ 当前体重" value={info.weightKg} unit="kg" accent="#22c7e8"
+        <MetricCard id="m-weight" label="⚖️ 当前体重" value={info.weightKg} unit="kg" accent="#ff7849"
           foot={stats.change7d !== null ? `近 7 天 ${stats.change7d > 0 ? '+' : ''}${stats.change7d} kg` : '开始记录后显示变化'} />
-        <MetricCard id="m-loss" label="📉 累计减重" value={stats.totalLoss > 0 ? stats.totalLoss : 0} unit="kg" accent="#34e0a1" delay={60}
+        <MetricCard id="m-loss" label="📉 累计减重" value={stats.totalLoss > 0 ? stats.totalLoss : 0} unit="kg" accent="#12b886" delay={60}
           foot={`初始 ${profile.startWeightKg} kg`} />
         <MetricCard id="m-bmi" label="🧮 BMI" accent={BMI_COLOR[level.key]} delay={120}
           value={<span style={{ color: BMI_COLOR[level.key] }}>{info.bmi.toFixed(1)}</span>}
           foot={<span className="tag" style={{ color: BMI_COLOR[level.key] }}>{level.label}</span>} />
-        <MetricCard id="m-streak" label="🔥 连续打卡" value={streak} unit="天" accent="#ffc24b" delay={180}
+        <MetricCard id="m-streak" label="🔥 连续打卡" value={streak} unit="天" accent="#f59f00" delay={180}
           foot={`每日热量目标 ${info.target} kcal`} />
       </div>
 

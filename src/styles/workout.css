@@ -1,26 +1,26 @@
-/* ---------- 训练：红色主题 ---------- */
+/* ---------- 训练：珊瑚燃脂红主题 ---------- */
 :root {
-  --burn: #ff4d6d;
-  --burn-2: #ff8e5e;
-  --grad-burn: linear-gradient(135deg, #ff4d6d 0%, #ff8e5e 100%);
+  --burn: #f43f5e;
+  --burn-2: #ff7849;
+  --grad-burn: linear-gradient(135deg, #f43f5e 0%, #ff7849 100%);
 }
 
 .burn-text {
-  color: var(--burn);
+  color: #e11d48;
 }
 .tag-burn {
-  background: rgba(255, 77, 109, 0.14);
-  color: #ff7a93;
+  background: rgba(244, 63, 94, 0.12);
+  color: #e11d48;
 }
 .btn-burn {
   background: var(--grad-burn);
   border-color: transparent;
   color: #fff;
   font-weight: 700;
-  box-shadow: 0 8px 24px -10px rgba(255, 77, 109, 0.8);
+  box-shadow: 0 8px 22px -10px rgba(244, 63, 94, 0.7);
 }
 .btn-burn:hover:not(:disabled) {
-  box-shadow: 0 10px 28px -8px rgba(255, 77, 109, 0.95);
+  box-shadow: 0 10px 26px -8px rgba(244, 63, 94, 0.85);
 }
 
 /* 统计行 */
@@ -30,8 +30,8 @@
   gap: 12px;
   padding: 8px 18px 8px 8px;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(255, 77, 109, 0.16), rgba(255, 142, 94, 0.06));
-  border: 1px solid rgba(255, 77, 109, 0.35);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.12), rgba(255, 120, 73, 0.08));
+  border: 1px solid rgba(244, 63, 94, 0.28);
 }
 .wo-burn-card span {
   display: block;
@@ -47,24 +47,24 @@
   color: var(--text-2);
 }
 
-/* 周表：今天列改为红色高亮 */
+/* 周表：今天列改为珊瑚红高亮 */
 .wo-week {
   grid-template-columns: 92px repeat(7, minmax(160px, 1fr));
 }
 .wo-week .is-today {
-  background: rgba(255, 77, 109, 0.07);
+  background: rgba(244, 63, 94, 0.05);
   box-shadow: inset 2px 0 0 var(--burn), inset -2px 0 0 var(--burn);
 }
 .wo-week .wk-day-head.is-today {
-  background: linear-gradient(180deg, rgba(255, 77, 109, 0.3), rgba(255, 77, 109, 0.08));
+  background: linear-gradient(180deg, rgba(244, 63, 94, 0.18), rgba(244, 63, 94, 0.05));
   box-shadow: inset 2px 0 0 var(--burn), inset -2px 0 0 var(--burn), inset 0 2px 0 var(--burn);
-  color: #ff8fa3;
+  color: #e11d48;
 }
 .wo-week .wk-total.is-today {
   box-shadow: inset 2px 0 0 var(--burn), inset -2px 0 0 var(--burn), inset 0 -2px 0 var(--burn);
 }
 .wo-week .today-flag {
-  background: var(--burn);
+  background: var(--grad-burn);
   color: #fff;
 }
 .wo-week .wk-day-head small {
@@ -91,17 +91,18 @@
   align-items: flex-start;
   padding: 8px 8px 8px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #fffcf9;
+  border: 1px solid var(--border);
   transition: all 0.25s var(--ease);
 }
 .wo-ex:hover {
-  border-color: rgba(255, 77, 109, 0.35);
+  border-color: rgba(244, 63, 94, 0.35);
+  background: #ffffff;
 }
 .wo-ex.done {
-  background: rgba(255, 77, 109, 0.12);
-  border-color: rgba(255, 77, 109, 0.6);
-  box-shadow: 0 0 18px -8px rgba(255, 77, 109, 0.9);
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 4px 14px -6px rgba(244, 63, 94, 0.3);
 }
 .wo-ex.busy > :not(.wo-swap) {
   animation: pulse 1.2s ease-in-out infinite;
@@ -135,8 +136,8 @@
   height: 22px;
   margin-top: 1px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 77, 109, 0.7);
-  background: transparent;
+  border: 2px solid rgba(244, 63, 94, 0.65);
+  background: #ffffff;
   color: #fff;
   font-size: 13px;
   font-weight: 800;
@@ -147,7 +148,7 @@
   transition: all 0.2s var(--ease);
 }
 .wo-check:hover {
-  background: rgba(255, 77, 109, 0.2);
+  background: rgba(244, 63, 94, 0.14);
 }
 .wo-check[aria-pressed='true'] {
   background: var(--grad-burn);
@@ -162,8 +163,9 @@
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  border: 1px solid var(--border);
-  background: rgba(15, 22, 48, 0.9);
+  border: 1px solid var(--border-strong);
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(180, 105, 55, 0.1);
   cursor: pointer;
   font-size: 12px;
   opacity: 0;
@@ -182,7 +184,7 @@
 }
 .wo-orphan {
   font-size: 11.5px;
-  color: #ff8fa3;
+  color: #e11d48;
   text-align: center;
 }
 
@@ -199,7 +201,7 @@
 
 /* 首页：今日完成情况 */
 .ring-legend .burn b {
-  color: var(--burn);
+  color: #e11d48;
 }
 .tp-banner {
   margin-bottom: 14px;
@@ -207,8 +209,9 @@
   border-radius: 12px;
   font-weight: 700;
   text-align: center;
-  background: linear-gradient(135deg, rgba(255, 77, 109, 0.2), rgba(52, 224, 161, 0.14));
-  border: 1px solid rgba(255, 77, 109, 0.4);
+  background: linear-gradient(135deg, rgba(255, 120, 73, 0.16), rgba(18, 184, 134, 0.12));
+  border: 1px solid rgba(255, 120, 73, 0.35);
+  color: #d9480f;
   animation: pop 0.4s var(--ease) both;
 }
 .tp-row + .tp-row {
@@ -230,7 +233,7 @@
 .tp-bar {
   height: 12px;
   border-radius: 99px;
-  background: rgba(5, 9, 22, 0.6);
+  background: var(--surface-2);
   border: 1px solid var(--border);
   overflow: hidden;
 }
@@ -241,11 +244,11 @@
   transition: width 0.9s var(--ease);
 }
 .tp-fill.diet {
-  background: var(--grad-primary);
+  background: var(--grad-fresh);
 }
 .tp-fill.train {
   background: var(--grad-burn);
-  box-shadow: 0 0 14px rgba(255, 77, 109, 0.7);
+  box-shadow: 0 2px 10px rgba(244, 63, 94, 0.45);
 }
 
 @media (max-width: 860px) {

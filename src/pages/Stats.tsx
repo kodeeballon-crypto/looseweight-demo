@@ -55,10 +55,10 @@ export default function Stats() {
       </div>
 
       <div className="grid grid-4">
-        <MetricCard label="📅 近 7 天变化" accent="#22c7e8" value={<span className={stats.change7d !== null && stats.change7d < 0 ? 'text-ok' : ''}>{fmt(stats.change7d, '')}</span>} unit="kg" />
-        <MetricCard label="📉 平均周减重" accent="#34e0a1" delay={60} value={stats.weeklyLoss ?? '--'} unit="kg/周" foot="建议每周 0.5–1 kg" />
-        <MetricCard label="✅ 热量达标率" accent="#8b7cff" delay={120} value={stats.kcalOkRate === null ? '--' : Math.round(stats.kcalOkRate * 100)} unit="%" foot={`按净摄入统计 ${stats.kcalDays} 天`} />
-        <MetricCard label="🎯 预计达成" accent="#ffc24b" delay={180}
+        <MetricCard label="📅 近 7 天变化" accent="#ff7849" value={<span className={stats.change7d !== null && stats.change7d < 0 ? 'text-ok' : ''}>{fmt(stats.change7d, '')}</span>} unit="kg" />
+        <MetricCard label="📉 平均周减重" accent="#12b886" delay={60} value={stats.weeklyLoss ?? '--'} unit="kg/周" foot="建议每周 0.5–1 kg" />
+        <MetricCard label="✅ 热量达标率" accent="#f06595" delay={120} value={stats.kcalOkRate === null ? '--' : Math.round(stats.kcalOkRate * 100)} unit="%" foot={`按净摄入统计 ${stats.kcalDays} 天`} />
+        <MetricCard label="🎯 预计达成" accent="#f59f00" delay={180}
           value={pred.kind === 'date' ? dayjs(pred.date).format('YYYY/M/D') : pred.kind === 'reached' ? '已达成 🎉' : '继续加油'}
           foot={pred.kind === 'date' ? `按近 4 周速度，约 ${pred.daysLeft} 天后` : pred.kind === 'keepGoing' ? '近 4 周暂无下降趋势' : '恭喜达到目标体重！'} />
       </div>

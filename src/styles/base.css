@@ -1,35 +1,41 @@
 :root {
-  --bg: #0a0f1e;
-  --bg-2: #0f1630;
-  --surface: rgba(255, 255, 255, 0.045);
-  --surface-2: rgba(255, 255, 255, 0.08);
-  --surface-3: rgba(255, 255, 255, 0.12);
-  --border: rgba(255, 255, 255, 0.09);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --text: #eef2ff;
-  --text-2: #a8b1cf;
-  --text-3: #6b7493;
+  --bg: #fff9f3;
+  --bg-2: #fff1e4;
+  --surface: rgba(255, 255, 255, 0.85);
+  --surface-2: #fff3e8;
+  --surface-3: #ffe6d1;
+  --border: rgba(185, 115, 70, 0.14);
+  --border-strong: rgba(185, 115, 70, 0.26);
+  --text: #2c211b;
+  --text-2: #6e584c;
+  --text-3: #856d60;
 
-  --mint: #34e0a1;
-  --teal: #22c7e8;
-  --violet: #8b7cff;
-  --coral: #ff6b8b;
-  --amber: #ffc24b;
-  --sky: #5aa9ff;
+  --mint: #ff7849;
+  --teal: #12b886;
+  --violet: #f06595;
+  --coral: #f03e3e;
+  --amber: #f59f00;
+  --sky: #339af0;
 
-  --ok: #34e0a1;
-  --slight: #ffc24b;
-  --over: #ff6b8b;
+  --ok: #12b886;
+  --slight: #f59f00;
+  --over: #f03e3e;
+  /* 浅色背景上作为文字使用的加深版（对比度 ≥ 4.5:1） */
+  --ok-text: #099268;
+  --slight-text: #b45309;
+  --over-text: #c92a2a;
+  --sky-text: #1971c2;
 
-  --grad-primary: linear-gradient(135deg, #34e0a1 0%, #22c7e8 100%);
-  --grad-violet: linear-gradient(135deg, #8b7cff 0%, #22c7e8 100%);
-  --grad-warm: linear-gradient(135deg, #ffc24b 0%, #ff6b8b 100%);
+  --grad-primary: linear-gradient(135deg, #ff7849 0%, #ffa94d 100%);
+  --grad-violet: linear-gradient(135deg, #ff6b8b 0%, #ff8e53 100%);
+  --grad-warm: linear-gradient(135deg, #ffa94d 0%, #ff6b8b 100%);
+  --grad-fresh: linear-gradient(135deg, #12b886 0%, #38d9a9 100%);
 
   --radius-sm: 10px;
   --radius: 16px;
   --radius-lg: 22px;
-  --shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 0 1px rgba(52, 224, 161, 0.35), 0 12px 40px -10px rgba(52, 224, 161, 0.45);
+  --shadow: 0 10px 32px -10px rgba(180, 105, 55, 0.12), 0 2px 8px -2px rgba(180, 105, 55, 0.06);
+  --shadow-glow: 0 0 0 1px rgba(255, 120, 73, 0.3), 0 12px 32px -10px rgba(255, 120, 73, 0.32);
 
   --font: 'Outfit', 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
   --font-num: 'Outfit', 'DIN Alternate', system-ui, sans-serif;
@@ -50,35 +56,39 @@ body,
 body {
   font-family: var(--font);
   color: var(--text);
-  background: var(--bg);
+  background:
+    radial-gradient(80vmax 60vmax at 12% 0%, rgba(255, 200, 150, 0.32), transparent 65%),
+    radial-gradient(70vmax 60vmax at 92% 18%, rgba(255, 180, 195, 0.24), transparent 65%),
+    radial-gradient(70vmax 60vmax at 50% 100%, rgba(160, 240, 210, 0.22), transparent 65%),
+    var(--bg);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
-/* 背景光晕 */
+/* 晨光柔和光晕 */
 body::before,
 body::after {
   content: '';
   position: fixed;
   z-index: -1;
-  width: 60vmax;
-  height: 60vmax;
+  width: 58vmax;
+  height: 58vmax;
   border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.22;
+  filter: blur(95px);
+  opacity: 0.38;
   pointer-events: none;
   animation: drift 26s ease-in-out infinite alternate;
 }
 body::before {
-  top: -25vmax;
-  left: -15vmax;
-  background: radial-gradient(circle, #34e0a1, transparent 65%);
+  top: -22vmax;
+  left: -12vmax;
+  background: radial-gradient(circle, #ffba82, transparent 66%);
 }
 body::after {
-  bottom: -30vmax;
-  right: -20vmax;
-  background: radial-gradient(circle, #8b7cff, transparent 65%);
+  bottom: -26vmax;
+  right: -16vmax;
+  background: radial-gradient(circle, #ff9ebb, transparent 66%);
   animation-delay: -13s;
 }
 
@@ -98,7 +108,7 @@ h4 {
 }
 
 a {
-  color: var(--teal);
+  color: #e8590c;
   text-decoration: none;
 }
 
@@ -111,7 +121,7 @@ textarea {
 }
 
 ::selection {
-  background: rgba(52, 224, 161, 0.35);
+  background: rgba(255, 120, 73, 0.24);
 }
 
 ::-webkit-scrollbar {
@@ -119,8 +129,13 @@ textarea {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(185, 115, 70, 0.24);
   border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(185, 115, 70, 0.38);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -138,13 +153,13 @@ textarea {
   color: var(--text-3);
 }
 .text-ok {
-  color: var(--ok);
+  color: var(--ok-text);
 }
 .text-slight {
-  color: var(--slight);
+  color: var(--slight-text);
 }
 .text-over {
-  color: var(--over);
+  color: var(--over-text);
 }
 .grad-text {
   background: var(--grad-primary);

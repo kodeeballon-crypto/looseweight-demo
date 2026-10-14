@@ -6,10 +6,12 @@ import { KCAL_STATUS_LABEL } from '../domain/calc';
 import { BURN_C1, BURN_C2 } from './BurnRing';
 
 const COLOR: Record<KcalStatus, [string, string]> = {
-  ok: ['#34e0a1', '#22c7e8'],
-  slight: ['#ffc24b', '#ff9f43'],
-  over: ['#ff6b8b', '#ff8e5e'],
+  ok: ['#12b886', '#38d9a9'],
+  slight: ['#f59f00', '#ffa94d'],
+  over: ['#f03e3e', '#ff6b8b'],
 };
+/** 中心状态文字用的加深色，保证浅色背景下可读 */
+const LABEL_COLOR: Record<KcalStatus, string> = { ok: '#099268', slight: '#b45309', over: '#c92a2a' };
 
 interface Props {
   /** 中心与外圈显示的数值（首页传净摄入） */
@@ -42,11 +44,11 @@ export default function KcalRing({ intake, target, status, burned = 0, burnPlan 
           value: Math.max(p, 0.0001),
           itemStyle: {
             color: { type: 'linear' as const, x: 0, y: 0, x2: 1, y2: 1, colorStops: [{ offset: 0, color: a }, { offset: 1, color: b }] },
-            shadowBlur: 18,
-            shadowColor: a + '88',
+            shadowBlur: 14,
+            shadowColor: a + '55',
           },
         },
-        { value: Math.max(1 - p, 0.0001), itemStyle: { color: 'rgba(255,255,255,0.07)', shadowBlur: 0 } },
+        { value: Math.max(1 - p, 0.0001), itemStyle: { color: 'rgba(185, 115, 70, 0.11)', shadowBlur: 0 } },
       ],
       animationDuration: 1200,
       animationEasing: 'cubicOut' as const,
@@ -58,19 +60,19 @@ export default function KcalRing({ intake, target, status, burned = 0, burnPlan 
           type: 'text',
           left: 'center',
           top: '36%',
-          style: { text: String(intake), fill: '#eef2ff', fontSize: 36, fontWeight: 700, fontFamily: 'Outfit, sans-serif' },
+          style: { text: String(intake), fill: '#2c211b', fontSize: 36, fontWeight: 700, fontFamily: 'Outfit, sans-serif' },
         },
         {
           type: 'text',
           left: 'center',
           top: '55%',
-          style: { text: `/ ${target} kcal`, fill: '#a8b1cf', fontSize: 13, fontFamily: 'Outfit, sans-serif' },
+          style: { text: `/ ${target} kcal`, fill: '#6e584c', fontSize: 13, fontFamily: 'Outfit, sans-serif' },
         },
         {
           type: 'text',
           left: 'center',
           top: '65%',
-          style: { text: showBurn ? `🔥 -${burned}` : KCAL_STATUS_LABEL[status], fill: showBurn ? BURN_C1 : c1, fontSize: 13, fontWeight: 700 },
+          style: { text: showBurn ? `🔥 -${burned}` : KCAL_STATUS_LABEL[status], fill: showBurn ? '#e11d48' : LABEL_COLOR[status], fontSize: 13, fontWeight: 700 },
         },
       ],
     };

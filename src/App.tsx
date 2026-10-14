@@ -9,15 +9,9 @@ import Settings from './pages/Settings';
 import Toasts from './components/Toasts';
 import { ConfirmHost } from './components/Modal';
 import { BadgeHost } from './components/BadgePopup';
-import { DISCLAIMER } from './constants';
 
-const NAV = [
-  { to: '/', ico: '🏠', label: '今日' },
-  { to: '/stats', ico: '📈', label: '统计' },
-  { to: '/plan', ico: '🥗', label: '饮食周表' },
-  { to: '/workout', ico: '🏋️', label: '训练周表' },
-  { to: '/settings', ico: '⚙️', label: '设置' },
-];
+import { useT } from './i18n';
+import LangSwitch from './components/LangSwitch';
 
 /** 未填写档案时，任意页面重定向到设置页的档案表单 */
 function Guard({ children }: { children: ReactNode }) {
@@ -28,25 +22,36 @@ function Guard({ children }: { children: ReactNode }) {
 }
 
 function Shell() {
+  const { t } = useT();
+
+  const navItems = [
+    { to: '/', ico: '🏠', label: t('nav.today'), id: 'nav-home' },
+    { to: '/stats', ico: '📈', label: t('nav.stats'), id: 'nav-stats' },
+    { to: '/plan', ico: '🥗', label: t('nav.plan'), id: 'nav-plan' },
+    { to: '/workout', ico: '🏋️', label: t('nav.workout'), id: 'nav-workout' },
+    { to: '/settings', ico: '⚙️', label: t('nav.settings'), id: 'nav-settings' },
+  ];
+
   return (
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-logo">🪶</div>
-          <div>
-            <div className="brand-name grad-text">轻盈</div>
-            <div className="brand-sub">每天轻一点点</div>
+          <div className="brand-info">
+            <div className="brand-name grad-text">{t('app.title')}</div>
+            <div className="brand-sub">{t('app.slogan')}</div>
           </div>
+          <LangSwitch className="brand-lang" />
         </div>
         <nav className="nav">
-          {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.to === '/'} id={`nav-${n.to.replace('/', '') || 'home'}`}>
+          {navItems.map((n) => (
+            <NavLink key={n.to} to={n.to} end={n.to === '/'} id={n.id}>
               <span className="nav-ico">{n.ico}</span>
               {n.label}
             </NavLink>
           ))}
         </nav>
-        <div className="sidebar-foot">数据仅保存在本机浏览器</div>
+        <div className="sidebar-foot">{t('app.localOnly')}</div>
       </aside>
 
       <main className="main">
@@ -60,11 +65,11 @@ function Shell() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Guard>
-        <footer className="disclaimer">⚕️ {DISCLAIMER}</footer>
+        <footer className="disclaimer">{t('app.disclaimer')}</footer>
       </main>
 
       <nav className="tabbar">
-        {NAV.map((n) => (
+        {navItems.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'}>
             <span>{n.ico}</span>
             <span>{n.label}</span>

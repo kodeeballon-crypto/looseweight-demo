@@ -33,7 +33,6 @@ describe('i18n core', () => {
 
   it('falls back to key when missing key', () => {
     const tZh = getT('zh');
-    // @ts-expect-error test nonexistent key
     expect(tZh('nonexistent.key')).toBe('nonexistent.key');
   });
 

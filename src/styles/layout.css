@@ -22,26 +22,42 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 8px;
+  gap: 10px;
+  padding: 0 4px;
 }
 .brand-logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 13px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
-  font-size: 22px;
+  font-size: 20px;
   background: var(--grad-primary);
   box-shadow: 0 8px 20px -6px rgba(255, 120, 73, 0.55);
+  flex: none;
+}
+.brand-info {
+  min-width: 0;
+  flex: 1;
 }
 .brand-name {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
+  line-height: 1.15;
 }
 .brand-sub {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brand-lang {
+  flex: none;
+}
+.brand-lang button {
+  padding: 3px 7px;
+  font-size: 11px;
 }
 
 .nav {

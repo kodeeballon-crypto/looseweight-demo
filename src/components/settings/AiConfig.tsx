@@ -3,6 +3,7 @@ import { useStore } from '../../store/useStore';
 import { toast } from '../../store/toast';
 import { chat, errorMessage, isAiConfigured } from '../../ai/client';
 import { PING_MESSAGES } from '../../ai/prompts';
+import { useT } from '../../i18n';
 
 const PRESETS = [
   { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', model: 'deepseek-flash' },
@@ -12,6 +13,7 @@ const PRESETS = [
 ];
 
 export default function AiConfig() {
+  const { lang } = useT();
   const settings = useStore((s) => s.settings);
   const setSettings = useStore((s) => s.setSettings);
   const [showKey, setShowKey] = useState(false);
@@ -21,7 +23,7 @@ export default function AiConfig() {
     setTesting(true);
     try {
       const reply = await chat(settings, PING_MESSAGES, { timeoutMs: 20000 });
-      toast(`连接成功 🎉 模型回复：${reply.slice(0, 30)}`, 'success');
+      toast(lang === 'en' ? `Connected successfully 🎉 Model response: ${reply.slice(0, 30)}` : `连接成功 🎉 模型回复：${reply.slice(0, 30)}`, 'success');
     } catch (e) {
       toast(errorMessage(e), 'error');
     } finally {
@@ -32,7 +34,7 @@ export default function AiConfig() {
   return (
     <div className="stack">
       <div className="field">
-        <span className="field-label">快捷预设（只填 Base URL 和模型名）</span>
+        <span className="field-label">{lang === 'en' ? 'Quick Presets (fills Base URL & Model)' : '快捷预设（只填 Base URL 和模型名）'}</span>
         <div className="preset-row">
           {PRESETS.map((p) => (
             <button
@@ -60,7 +62,7 @@ export default function AiConfig() {
           />
         </div>
         <div className="field">
-          <label htmlFor="ai-model">模型名</label>
+          <label htmlFor="ai-model">{lang === 'en' ? 'Model Name' : '模型名'}</label>
           <input
             id="ai-model"
             className="input"
@@ -83,11 +85,13 @@ export default function AiConfig() {
             value={settings.apiKey}
             onChange={(e) => setSettings({ apiKey: e.target.value })}
           />
-          <button type="button" className="btn btn-ghost" onClick={() => setShowKey((v) => !v)} aria-label="显示/隐藏 Key">
+          <button type="button" className="btn btn-ghost" onClick={() => setShowKey((v) => !v)} aria-label={lang === 'en' ? 'Show/hide Key' : '显示/隐藏 Key'}>
             {showKey ? '🙈' : '👁️'}
           </button>
         </div>
-        <span className="field-hint">Key 只保存在本机浏览器 localStorage 中，导出备份时不会包含。</span>
+        <span className="field-hint">
+          {lang === 'en' ? 'API Key is stored only in browser localStorage and is excluded from exported backups.' : 'Key 只保存在本机浏览器 localStorage 中，导出备份时不会包含。'}
+        </span>
       </div>
 
       <div className="row-between wrap">
@@ -100,12 +104,16 @@ export default function AiConfig() {
             aria-pressed={settings.directMode}
           />
           <div>
-            <div style={{ fontWeight: 600 }}>直连模式</div>
-            <div className="field-hint">默认关闭：经本地 Vite 代理转发，避免跨域。仅对支持 CORS 的服务开启。</div>
+            <div style={{ fontWeight: 600 }}>{lang === 'en' ? 'Direct Connection Mode' : '直连模式'}</div>
+            <div className="field-hint">
+              {lang === 'en'
+                ? 'Disabled by default: Proxied via local Vite dev server to prevent CORS. Enable only if the endpoint supports CORS.'
+                : '默认关闭：经本地 Vite 代理转发，避免跨域。仅对支持 CORS 的服务开启。'}
+            </div>
           </div>
         </div>
         <button id="ai-test" type="button" className="btn btn-violet" disabled={!isAiConfigured(settings) || testing} onClick={test}>
-          {testing ? <span className="spinner" /> : '🔌'} 测试连接
+          {testing ? <span className="spinner" /> : '🔌'} {lang === 'en' ? 'Test Connection' : '测试连接'}
         </button>
       </div>
     </div>

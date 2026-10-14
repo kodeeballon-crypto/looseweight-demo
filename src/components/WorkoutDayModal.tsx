@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { WorkoutDay } from '../types';
 import { exerciseId } from '../domain/workout';
 import { Modal } from './Modal';
+import { useT } from '../i18n';
 
 interface Props {
   open: boolean;
@@ -32,6 +33,7 @@ const kcalOk = (s: string) => {
 };
 
 function Inner({ title, day, onClose, onSave }: { title: string; day: WorkoutDay; onClose: () => void; onSave: (d: WorkoutDay) => void }) {
+  const { lang } = useT();
   const [focus, setFocus] = useState(day.focus);
   const [rows, setRows] = useState<Row[]>(day.exercises.map((e) => ({ id: e.id, name: e.name, detail: e.detail, kcal: String(e.kcal) })));
   const valid = focus.trim() !== '' && rows.every((r) => r.name.trim() !== '' && kcalOk(r.kcal));
@@ -39,17 +41,35 @@ function Inner({ title, day, onClose, onSave }: { title: string; day: WorkoutDay
 
   return (
     <>
-      <h3>✏️ 编辑 · {title}</h3>
+      <h3>✏️ {lang === 'en' ? 'Edit' : '编辑'} · {title}</h3>
       <div className="stack mt-16" style={{ gap: 12 }}>
         <div className="field">
-          <label htmlFor="wd-focus">训练重点</label>
-          <input id="wd-focus" className="input" placeholder="如：下肢力量 / 有氧燃脂 / 休息·拉伸" value={focus} onChange={(e) => setFocus(e.target.value)} />
+          <label htmlFor="wd-focus">{lang === 'en' ? 'Focus' : '训练重点'}</label>
+          <input
+            id="wd-focus"
+            className="input"
+            placeholder={lang === 'en' ? 'e.g., Lower Body Strength / Cardio Burn / Rest & Stretch' : '如：下肢力量 / 有氧燃脂 / 休息·拉伸'}
+            value={focus}
+            onChange={(e) => setFocus(e.target.value)}
+          />
         </div>
-        <span className="field-label">动作（休息日可以不填）</span>
+        <span className="field-label">{lang === 'en' ? 'Exercises (can leave empty for rest days)' : '动作（休息日可以不填）'}</span>
         {rows.map((r, i) => (
           <div key={r.id} className="ex-edit-row">
-            <input id={`wd-name-${i}`} className="input" placeholder="动作名" value={r.name} onChange={(e) => patch(r.id, { name: e.target.value })} />
-            <input id={`wd-detail-${i}`} className="input" placeholder="组数×次数 / 时长 · 要点" value={r.detail} onChange={(e) => patch(r.id, { detail: e.target.value })} />
+            <input
+              id={`wd-name-${i}`}
+              className="input"
+              placeholder={lang === 'en' ? 'Exercise name' : '动作名'}
+              value={r.name}
+              onChange={(e) => patch(r.id, { name: e.target.value })}
+            />
+            <input
+              id={`wd-detail-${i}`}
+              className="input"
+              placeholder={lang === 'en' ? 'Sets × Reps / Duration · Cue' : '组数×次数 / 时长 · 要点'}
+              value={r.detail}
+              onChange={(e) => patch(r.id, { detail: e.target.value })}
+            />
             <div className="input-suffix">
               <input
                 id={`wd-kcal-${i}`}
@@ -61,7 +81,11 @@ function Inner({ title, day, onClose, onSave }: { title: string; day: WorkoutDay
               />
               <span>kcal</span>
             </div>
-            <button className="btn btn-sm btn-ghost" aria-label="删除动作" onClick={() => setRows((list) => list.filter((x) => x.id !== r.id))}>
+            <button
+              className="btn btn-sm btn-ghost"
+              aria-label={lang === 'en' ? 'Delete exercise' : '删除动作'}
+              onClick={() => setRows((list) => list.filter((x) => x.id !== r.id))}
+            >
               🗑️
             </button>
           </div>
@@ -72,12 +96,12 @@ function Inner({ title, day, onClose, onSave }: { title: string; day: WorkoutDay
           style={{ alignSelf: 'flex-start' }}
           onClick={() => setRows((list) => [...list, { id: exerciseId(), name: '', detail: '', kcal: '50' }])}
         >
-          ＋ 添加动作
+          ＋ {lang === 'en' ? 'Add Exercise' : '添加动作'}
         </button>
       </div>
       <div className="modal-actions">
         <button className="btn btn-ghost" onClick={onClose}>
-          取消
+          {lang === 'en' ? 'Cancel' : '取消'}
         </button>
         <button
           id="wd-save"
@@ -92,7 +116,7 @@ function Inner({ title, day, onClose, onSave }: { title: string; day: WorkoutDay
             onClose();
           }}
         >
-          保存
+          {lang === 'en' ? 'Save' : '保存'}
         </button>
       </div>
     </>

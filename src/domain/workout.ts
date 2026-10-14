@@ -11,17 +11,43 @@ import type {
   WorkoutLog,
   WorkoutPlan,
 } from '../types';
+import type { Lang } from '../i18n/types';
 
 /** UI 选项文案 */
-export const PLACE_LABELS: Record<TrainingPlace, string> = {
-  home: '🏠 居家徒手',
-  gym: '🏋️ 健身房',
-  outdoor: '🌳 户外',
+export const PLACE_LABELS_MAP: Record<Lang, Record<TrainingPlace, string>> = {
+  zh: {
+    home: '🏠 居家徒手',
+    gym: '🏋️ 健身房',
+    outdoor: '🌳 户外',
+  },
+  en: {
+    home: '🏠 Home (Bodyweight)',
+    gym: '🏋️ Gym',
+    outdoor: '🌳 Outdoor',
+  },
 };
-export const LEVEL_LABELS: Record<TrainingLevel, string> = {
-  beginner: '🌱 新手',
-  base: '💪 有基础',
+
+export const LEVEL_LABELS_MAP: Record<Lang, Record<TrainingLevel, string>> = {
+  zh: {
+    beginner: '🌱 新手',
+    base: '💪 有基础',
+  },
+  en: {
+    beginner: '🌱 Beginner',
+    base: '💪 Intermediate',
+  },
 };
+
+export function getPlaceLabel(p: TrainingPlace, lang: Lang = 'zh'): string {
+  return PLACE_LABELS_MAP[lang]?.[p] ?? PLACE_LABELS_MAP.zh[p];
+}
+
+export function getLevelLabel(lvl: TrainingLevel, lang: Lang = 'zh'): string {
+  return LEVEL_LABELS_MAP[lang]?.[lvl] ?? LEVEL_LABELS_MAP.zh[lvl];
+}
+
+export const PLACE_LABELS = PLACE_LABELS_MAP.zh;
+export const LEVEL_LABELS = LEVEL_LABELS_MAP.zh;
 export const MINUTE_OPTIONS: TrainingMinutes[] = [20, 30, 45, 60];
 export const DAY_OPTIONS: TrainingDays[] = [3, 4, 5, 6, 7];
 

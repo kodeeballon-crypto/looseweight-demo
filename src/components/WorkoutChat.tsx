@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { toast } from '../store/toast';
 import type { WorkoutChange } from '../types';
-import { WEEKDAY_LABELS } from '../types';
+import { getWeekdayLabel } from '../types';
 import { chat, errorMessage } from '../ai/client';
 import { adjustWorkoutMessages } from '../ai/workoutPrompts';
 import { parseWorkoutAdjustment } from '../ai/parseWorkout';
 import { energyInfo } from '../domain/calc';
 import { DEFAULT_PREFS, dayBurn } from '../domain/workout';
 import { confirmDialog } from './Modal';
+import { useT } from '../i18n';
 
 export interface PendingWorkout {
   msgId: string;
@@ -23,7 +24,8 @@ interface Props {
   onPending: (p: PendingWorkout | null) => void;
 }
 
-const QUICK = ['膝盖不太好', '只有一副哑铃', '这周很忙，每次 20 分钟', '深蹲怎么做才标准？', '练完很酸怎么办', '今天想换成有氧'];
+const QUICK_ZH = ['膝盖不太好', '只有一副哑铃', '这周很忙，每次 20 分钟', '深蹲怎么做才标准？', '练完很酸怎么办', '今天想换成有氧'];
+const QUICK_EN = ['Knee discomfort', 'Only a pair of dumbbells', 'Busy week, 20 min/session', 'How to squat with good form?', 'Sore after workout, what to do?', 'Switch today to cardio'];
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const now = () => new Date().toISOString();
@@ -35,6 +37,7 @@ interface LocalError {
 }
 
 export default function WorkoutChat({ variant, open, onClose, pending, onPending }: Props) {
+  const { lang } = useT();
   const {
     profile,
     records,
@@ -61,6 +64,8 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
   }, [workoutChat.length, errors.length, sending, pending]);
 
   if (!profile || !workoutPlan) return null;
+
+  const quickOptions = lang === 'en' ? QUICK_EN : QUICK_ZH;
 
   const send = async (raw: string) => {
     const text = raw.trim();
@@ -95,11 +100,18 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
     applyWorkoutChanges(pending.changes);
     markWorkoutChatApplied(pending.msgId);
     onPending(null);
-    toast(`已更新 ${pending.changes.length} 天训练 ✨`, 'success');
+    toast(lang === 'en' ? `Updated ${pending.changes.length} day(s) of training ✨` : `已更新 ${pending.changes.length} 天训练 ✨`, 'success');
   };
 
   const clear = async () => {
-    if (!(await confirmDialog({ title: '清空对话？', message: '对话记录会被删除，已记住的长期要求会保留。', okText: '清空' }))) return;
+    if (
+      !(await confirmDialog({
+        title: lang === 'en' ? 'Clear conversation?' : '清空对话？',
+        message: lang === 'en' ? 'Chat messages will be deleted; remembered long-term preferences will be kept.' : '对话记录会被删除，已记住的长期要求会保留。',
+        okText: lang === 'en' ? 'Clear' : '清空',
+      }))
+    )
+      return;
     clearWorkoutChat();
     setErrors([]);
     onPending(null);
@@ -111,22 +123,22 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
   ].sort((a, b) => a.at.localeCompare(b.at));
 
   return (
-    <aside className={`plan-chat plan-chat-${variant} ${open ? 'open' : ''}`} aria-label="AI 教练对话">
+    <aside className={`plan-chat plan-chat-${variant} ${open ? 'open' : ''}`} aria-label={lang === 'en' ? 'AI Coach chat' : 'AI 教练对话'}>
       <header className="chat-head">
         <div className="chat-avatar" style={{ background: 'var(--grad-burn)' }}>
           🏋️
         </div>
         <div className="chat-title">
-          <h2>AI 教练</h2>
-          <p>调整计划，或问我动作怎么做</p>
+          <h2>{lang === 'en' ? 'AI Coach' : 'AI 教练'}</h2>
+          <p>{lang === 'en' ? 'Adjust routine, or ask about exercise form' : '调整计划，或问我动作怎么做'}</p>
         </div>
         {workoutChat.length > 0 && (
-          <button id="wchat-clear" className="chat-icon-btn" title="清空对话" onClick={clear}>
+          <button id="wchat-clear" className="chat-icon-btn" title={lang === 'en' ? 'Clear conversation' : '清空对话'} onClick={clear}>
             🗑️
           </button>
         )}
         {variant === 'drawer' && (
-          <button id="wchat-close" className="chat-icon-btn" title="收起" onClick={onClose}>
+          <button id="wchat-close" className="chat-icon-btn" title={lang === 'en' ? 'Close' : '收起'} onClick={onClose}>
             ✕
           </button>
         )}
@@ -134,12 +146,14 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
 
       <div className="chat-memory">
         {workoutMemory.length === 0 ? (
-          <span className="chat-memory-empty">📌 我记住的长期训练要求会显示在这里</span>
+          <span className="chat-memory-empty">
+            {lang === 'en' ? '📌 Remembered training preferences show here' : '📌 我记住的长期训练要求会显示在这里'}
+          </span>
         ) : (
           workoutMemory.map((m) => (
             <span key={m} className="chip chip-memory">
               📌 {m}
-              <button aria-label={`删除 ${m}`} onClick={() => removeWorkoutMemory(m)}>
+              <button aria-label={lang === 'en' ? `Remove ${m}` : `删除 ${m}`} onClick={() => removeWorkoutMemory(m)}>
                 ×
               </button>
             </span>
@@ -151,11 +165,19 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
         {items.length === 0 && (
           <div className="chat-welcome">
             <div className="chat-welcome-ico">💪</div>
-            <p>想调整训练，或者有动作不会做？直接问我，比如：</p>
+            <p>{lang === 'en' ? 'Want to tweak training, or not sure about form? Ask me anything:' : '想调整训练，或者有动作不会做？直接问我，比如：'}</p>
             <p className="faint">
-              “膝盖有点疼，能把跳跃动作换掉吗”
-              <br />
-              “平板支撑腰酸是姿势不对吗”
+              {lang === 'en' ? (
+                <>
+                  “My knee hurts a bit, can we replace jumping exercises?”<br />
+                  “Lower back hurts during planks, is my form off?”
+                </>
+              ) : (
+                <>
+                  “膝盖有点疼，能把跳跃动作换掉吗”<br />
+                  “平板支撑腰酸是姿势不对吗”
+                </>
+              )}
             </p>
           </div>
         )}
@@ -165,13 +187,17 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
             {m.text}
             {m.kind === 'assistant' && !!m.changeCount && (
               <span className={`bubble-meta ${m.applied ? 'is-applied' : ''}`}>
-                {m.applied ? `✅ 已应用 ${m.changeCount} 天修改` : pending?.msgId === m.id ? `📝 ${m.changeCount} 天修改待确认` : `${m.changeCount} 天修改未应用`}
+                {m.applied
+                  ? (lang === 'en' ? `✅ Applied ${m.changeCount} day(s) modified` : `✅ 已应用 ${m.changeCount} 天修改`)
+                  : pending?.msgId === m.id
+                  ? (lang === 'en' ? `📝 ${m.changeCount} day(s) pending` : `📝 ${m.changeCount} 天修改待确认`)
+                  : (lang === 'en' ? `${m.changeCount} day(s) unapplied` : `${m.changeCount} 天修改未应用`)}
               </span>
             )}
           </div>
         ))}
         {sending && (
-          <div className="bubble bubble-assistant bubble-typing" aria-label="AI 正在思考">
+          <div className="bubble bubble-assistant bubble-typing" aria-label={lang === 'en' ? 'AI is thinking' : 'AI 正在思考'}>
             <i />
             <i />
             <i />
@@ -180,18 +206,20 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
 
         {pending && (
           <div className="change-card">
-            <div className="change-card-title">将修改 {pending.changes.length} 天训练</div>
+            <div className="change-card-title">
+              {lang === 'en' ? `Will adjust ${pending.changes.length} day(s) of training` : `将修改 ${pending.changes.length} 天训练`}
+            </div>
             <ul className="change-list">
               {pending.changes.map((c) => {
                 const old = workoutPlan.days.find((d) => d.weekday === c.weekday)!;
                 const diff = dayBurn(c.next) - dayBurn(old);
                 return (
                   <li key={c.weekday}>
-                    <span className="change-where">{WEEKDAY_LABELS[c.weekday - 1]}</span>
+                    <span className="change-where">{getWeekdayLabel(c.weekday, lang)}</span>
                     <span className="change-what">
                       <s>{old.focus}</s> → <b>{c.next.focus}</b>
                       <br />
-                      <small className="faint">{c.next.exercises.map((e) => e.name).join('、') || '休息'}</small>
+                      <small className="faint">{c.next.exercises.map((e) => e.name).join('、') || (lang === 'en' ? 'Rest' : '休息')}</small>
                     </span>
                     <span className={`num change-kcal ${diff > 0 ? 'up' : diff < 0 ? 'down' : ''}`}>
                       {diff > 0 ? '+' : ''}
@@ -203,10 +231,10 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
             </ul>
             <div className="change-actions">
               <button id="wchat-discard" className="btn btn-sm" onClick={() => onPending(null)}>
-                放弃
+                {lang === 'en' ? 'Discard' : '放弃'}
               </button>
               <button id="wchat-apply" className="btn btn-sm btn-burn" onClick={apply}>
-                ✅ 应用
+                {lang === 'en' ? '✅ Apply' : '✅ 应用'}
               </button>
             </div>
           </div>
@@ -214,7 +242,7 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
       </div>
 
       <div className="chat-quick">
-        {QUICK.map((q) => (
+        {quickOptions.map((q) => (
           <button key={q} className="chip chip-quick" disabled={sending} onClick={() => send(q)}>
             {q}
           </button>
@@ -232,7 +260,7 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
           id="wchat-input"
           className="chat-input"
           rows={Math.min(4, Math.max(1, input.split('\n').length))}
-          placeholder="说说你的情况或问题…（Enter 发送，Shift+Enter 换行）"
+          placeholder={lang === 'en' ? 'Tell me your situation or question… (Enter to send, Shift+Enter for newline)' : '说说你的情况或问题…（Enter 发送，Shift+Enter 换行）'}
           value={input}
           disabled={sending}
           onChange={(e) => setInput(e.target.value)}
@@ -243,7 +271,7 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
             }
           }}
         />
-        <button id="wchat-send" type="submit" className="chat-send" disabled={sending || !input.trim()} aria-label="发送">
+        <button id="wchat-send" type="submit" className="chat-send" disabled={sending || !input.trim()} aria-label={lang === 'en' ? 'Send' : '发送'}>
           {sending ? <span className="spinner" /> : '➤'}
         </button>
       </form>

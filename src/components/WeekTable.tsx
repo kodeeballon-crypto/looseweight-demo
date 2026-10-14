@@ -1,5 +1,6 @@
 import type { Meal, MealKey, WeekPlan, Weekday } from '../types';
-import { MEAL_EMOJI, MEAL_KEYS, MEAL_LABELS, WEEKDAY_LABELS } from '../types';
+import { MEAL_EMOJI, MEAL_KEYS, WEEKDAY_LABELS_MAP, getMealLabel } from '../types';
+import { useT } from '../i18n';
 
 interface Props {
   plan: WeekPlan;
@@ -15,6 +16,7 @@ interface Props {
 export const cellId = (w: Weekday, k: MealKey) => `${w}-${k}`;
 
 export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSwap, preview }: Props) {
+  const { lang } = useT();
   const days = [...plan.days].sort((a, b) => a.weekday - b.weekday);
   const hl = (w: number) => (w === today ? 'is-today' : '');
 
@@ -24,8 +26,8 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
         <div className="wk-corner" />
         {days.map((d) => (
           <div key={d.weekday} className={`wk-day-head ${hl(d.weekday)}`}>
-            {WEEKDAY_LABELS[d.weekday - 1]}
-            <small>{d.weekday === today ? '今天吃这些' : ' '}</small>
+            {WEEKDAY_LABELS_MAP[lang][d.weekday - 1]}
+            <small>{d.weekday === today ? (lang === 'en' ? 'Today’s meals' : '今天吃这些') : ' '}</small>
             {d.weekday === today && <span className="today-flag">TODAY</span>}
           </div>
         ))}
@@ -34,7 +36,7 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
           <div key={k} style={{ display: 'contents' }}>
             <div className="wk-row-head">
               <span className="e">{MEAL_EMOJI[k]}</span>
-              {MEAL_LABELS[k]}
+              {getMealLabel(k, lang)}
             </div>
             {days.map((d) => {
               const id = cellId(d.weekday, k);
@@ -47,9 +49,11 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
                   id={`cell-${id}`}
                   className={`wk-cell ${hl(d.weekday)} ${busy ? 'busy' : ''} ${next ? 'is-preview' : ''}`}
                   onClick={() => !next && onEdit(d.weekday, k)}
-                  title={next ? `原：${d.meals[k].name}（${d.meals[k].kcal} kcal）` : '点击编辑'}
+                  title={next
+                    ? (lang === 'en' ? `Original: ${d.meals[k].name} (${d.meals[k].kcal} kcal)` : `原：${d.meals[k].name}（${d.meals[k].kcal} kcal）`)
+                    : (lang === 'en' ? 'Click to edit' : '点击编辑')}
                 >
-                  {next && <span className="preview-flag">待应用</span>}
+                  {next && <span className="preview-flag">{lang === 'en' ? 'Pending' : '待应用'}</span>}
                   <div className="wk-name">{m.name}</div>
                   {next && <div className="wk-old">{d.meals[k].name}</div>}
                   <div className="wk-items">{m.items}</div>
@@ -62,7 +66,7 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
                         onSwap(d.weekday, k);
                       }}
                     >
-                      {busy ? <span className="spinner" /> : '🔄'} 换一个
+                      {busy ? <span className="spinner" /> : '🔄'} {lang === 'en' ? 'Swap' : '换一个'}
                     </button>
                   )}
                 </div>
@@ -72,7 +76,7 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
         ))}
 
         <div className="wk-row-head wk-total-label" style={{ borderBottom: 'none' }}>
-          合计
+          {lang === 'en' ? 'Total' : '合计'}
         </div>
         {days.map((d) => {
           const before = MEAL_KEYS.reduce((s, k) => s + d.meals[k].kcal, 0);

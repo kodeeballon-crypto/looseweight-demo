@@ -1,6 +1,7 @@
 import type { Exercise, WorkoutDay, WorkoutPlan, Weekday } from '../types';
-import { WEEKDAY_LABELS } from '../types';
+import { getWeekdayLabel } from '../types';
 import { dayBurn } from '../domain/workout';
+import { useT } from '../i18n';
 
 interface Props {
   plan: WorkoutPlan;
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan, aiReady, busyId, onToggle, onCompleteAll, onEditDay, onSwap, preview }: Props) {
+  const { lang } = useT();
   const days = [...plan.days].sort((a, b) => a.weekday - b.weekday);
   const hl = (w: number) => (w === today ? 'is-today' : '');
 
@@ -32,7 +34,7 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
           const shown = preview?.get(d.weekday) ?? d;
           return (
             <div key={d.weekday} className={`wk-day-head ${hl(d.weekday)}`}>
-              {WEEKDAY_LABELS[d.weekday - 1]}
+              {getWeekdayLabel(d.weekday, lang)}
               <small>{shown.focus}</small>
               {d.weekday === today && <span className="today-flag">TODAY</span>}
             </div>
@@ -41,7 +43,7 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
 
         <div className="wk-row-head">
           <span className="e">🏋️</span>
-          训练
+          {lang === 'en' ? 'Workout' : '训练'}
         </div>
         {days.map((d) => {
           const next = preview?.get(d.weekday);
@@ -55,11 +57,11 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
               id={`wo-cell-${d.weekday}`}
               className={`wk-cell wo-cell ${hl(d.weekday)} ${day.exercises.length === 0 ? 'is-rest' : ''} ${next ? 'is-preview' : ''}`}
               onClick={() => !next && onEditDay(d.weekday)}
-              title={next ? `原：${d.focus}（${dayBurn(d)} kcal）` : '点击编辑当天'}
+              title={next ? (lang === 'en' ? `Original: ${d.focus} (${dayBurn(d)} kcal)` : `原：${d.focus}（${dayBurn(d)} kcal）`) : (lang === 'en' ? 'Click to edit day' : '点击编辑当天')}
             >
-              {next && <span className="preview-flag">待应用</span>}
+              {next && <span className="preview-flag">{lang === 'en' ? 'Pending' : '待应用'}</span>}
               {next && <div className="wk-old">{d.focus}</div>}
-              {day.exercises.length === 0 && <div className="wo-rest">😴 好好休息</div>}
+              {day.exercises.length === 0 && <div className="wo-rest">{lang === 'en' ? '😴 Rest Day' : '😴 好好休息'}</div>}
               {day.exercises.map((ex) => {
                 const done = canCheck && doneIds.has(ex.id);
                 const busy = busyId === ex.id;
@@ -68,7 +70,7 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
                     {canCheck && (
                       <button
                         className="wo-check"
-                        aria-label={`${done ? '取消完成' : '完成'} ${ex.name}`}
+                        aria-label={`${done ? (lang === 'en' ? 'Uncheck' : '取消完成') : (lang === 'en' ? 'Complete' : '完成')} ${ex.name}`}
                         aria-pressed={done}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -86,8 +88,8 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
                     {aiReady && !next && (
                       <button
                         className="wo-swap"
-                        title="换一个"
-                        aria-label={`换掉 ${ex.name}`}
+                        title={lang === 'en' ? 'Swap' : '换一个'}
+                        aria-label={lang === 'en' ? `Swap ${ex.name}` : `换掉 ${ex.name}`}
                         disabled={busy}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -110,12 +112,12 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
                     onCompleteAll();
                   }}
                 >
-                  {allDone ? '✅ 今日训练已完成' : '🔥 一键完成今日训练'}
+                  {allDone ? (lang === 'en' ? '✅ Completed Today' : '✅ 今日训练已完成') : (lang === 'en' ? '🔥 Complete All Today' : '🔥 一键完成今日训练')}
                 </button>
               )}
               {isToday && orphan.count > 0 && (
                 <div className="wo-orphan">
-                  另有 {orphan.count} 个已完成动作 · {orphan.kcal} kcal
+                  {lang === 'en' ? `+${orphan.count} more completed exercises · ${orphan.kcal} kcal` : `另有 ${orphan.count} 个已完成动作 · ${orphan.kcal} kcal`}
                 </div>
               )}
             </div>
@@ -123,7 +125,7 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
         })}
 
         <div className="wk-row-head wk-total-label" style={{ borderBottom: 'none' }}>
-          合计
+          {lang === 'en' ? 'Total' : '合计'}
         </div>
         {days.map((d) => {
           const before = dayBurn(d);

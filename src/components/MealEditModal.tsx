@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Meal } from '../types';
 import { Modal } from './Modal';
+import { useT } from '../i18n';
 
 interface Props {
   open: boolean;
@@ -19,6 +20,7 @@ export default function MealEditModal({ open, title, meal, onClose, onSave }: Pr
 }
 
 function Inner({ title, meal, onClose, onSave }: { title: string; meal: Meal; onClose: () => void; onSave: (m: Meal) => void }) {
+  const { lang } = useT();
   const [name, setName] = useState(meal.name);
   const [items, setItems] = useState(meal.items);
   const [kcal, setKcal] = useState(String(meal.kcal));
@@ -27,18 +29,18 @@ function Inner({ title, meal, onClose, onSave }: { title: string; meal: Meal; on
 
   return (
     <>
-      <h3>✏️ 编辑 · {title}</h3>
+      <h3>✏️ {lang === 'en' ? 'Edit' : '编辑'} · {title}</h3>
       <div className="stack mt-16">
         <div className="field">
-          <label htmlFor="meal-name">菜名</label>
+          <label htmlFor="meal-name">{lang === 'en' ? 'Dish Name' : '菜名'}</label>
           <input id="meal-name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="field">
-          <label htmlFor="meal-items">份量说明</label>
+          <label htmlFor="meal-items">{lang === 'en' ? 'Portion & Ingredients' : '份量说明'}</label>
           <textarea id="meal-items" className="textarea" value={items} onChange={(e) => setItems(e.target.value)} />
         </div>
         <div className="field">
-          <label htmlFor="meal-kcal">热量</label>
+          <label htmlFor="meal-kcal">{lang === 'en' ? 'Calories' : '热量'}</label>
           <div className="input-suffix">
             <input
               id="meal-kcal"
@@ -54,7 +56,7 @@ function Inner({ title, meal, onClose, onSave }: { title: string; meal: Meal; on
       </div>
       <div className="modal-actions">
         <button className="btn btn-ghost" onClick={onClose}>
-          取消
+          {lang === 'en' ? 'Cancel' : '取消'}
         </button>
         <button
           id="meal-save"
@@ -65,7 +67,7 @@ function Inner({ title, meal, onClose, onSave }: { title: string; meal: Meal; on
             onClose();
           }}
         >
-          保存
+          {lang === 'en' ? 'Save' : '保存'}
         </button>
       </div>
     </>

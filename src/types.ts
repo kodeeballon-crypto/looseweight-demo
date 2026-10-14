@@ -32,13 +32,29 @@ export interface Profile {
 }
 
 export type MealKey = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+import type { Lang } from './i18n/types';
+
 export const MEAL_KEYS: MealKey[] = ['breakfast', 'lunch', 'dinner', 'snack'];
-export const MEAL_LABELS: Record<MealKey, string> = {
-  breakfast: '早餐',
-  lunch: '午餐',
-  dinner: '晚餐',
-  snack: '加餐',
+export const MEAL_LABELS_MAP: Record<Lang, Record<MealKey, string>> = {
+  zh: {
+    breakfast: '早餐',
+    lunch: '午餐',
+    dinner: '晚餐',
+    snack: '加餐',
+  },
+  en: {
+    breakfast: 'Breakfast',
+    lunch: 'Lunch',
+    dinner: 'Dinner',
+    snack: 'Snack',
+  },
 };
+export const MEAL_LABELS: Record<MealKey, string> = MEAL_LABELS_MAP.zh;
+
+export function getMealLabel(key: MealKey, lang: Lang = 'zh'): string {
+  return MEAL_LABELS_MAP[lang]?.[key] ?? MEAL_LABELS_MAP.zh[key];
+}
+
 export const MEAL_EMOJI: Record<MealKey, string> = {
   breakfast: '🌅',
   lunch: '☀️',
@@ -62,7 +78,18 @@ export interface Meal {
 }
 
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
-export const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+export const WEEKDAY_LABELS_MAP: Record<Lang, string[]> = {
+  zh: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+  en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+};
+export const WEEKDAY_LABELS = WEEKDAY_LABELS_MAP.zh;
+
+export function getWeekdayLabel(weekdayOrIndex: number, lang: Lang = 'zh'): string {
+  // If 1-based weekday (1..7), convert to 0..6; if 0..6 keep as is
+  const idx = weekdayOrIndex >= 1 && weekdayOrIndex <= 7 ? weekdayOrIndex - 1 : weekdayOrIndex;
+  const list = WEEKDAY_LABELS_MAP[lang] ?? WEEKDAY_LABELS_MAP.zh;
+  return list[idx] ?? '';
+}
 
 export interface DayPlan {
   weekday: Weekday;

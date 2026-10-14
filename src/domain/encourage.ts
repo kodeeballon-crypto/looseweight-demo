@@ -115,6 +115,47 @@ export const CORPUS: Record<Scenario, string[]> = {
   ],
 };
 
+import type { Lang } from '../i18n/types';
+
+export const CORPUS_EN: Record<Scenario, string[]> = {
+  first: [
+    'Welcome on board! The first step is the most important one 🌱 Let’s take it day by day!',
+    'First check-in logged! Consistency starts right here ✨ You’ve got this!',
+  ],
+  milestone: [
+    'New milestone unlocked! 🏆 All your dedication is showing in the results!',
+    'Congratulations on this achievement! 🌟 Celebrate your hard work today.',
+  ],
+  streak30: [
+    '30-day streak achieved! 💎 Consistency is now your second nature. Outstanding!',
+  ],
+  streak7: [
+    '7 days straight! 🔥 Your healthy routine is firmly in place. Keep the fire going!',
+  ],
+  streak3: [
+    '3 days in a row! 🌿 Great beginning, keep the steady momentum.',
+  ],
+  down: [
+    'Down {delta} kg compared to last time! 📉 Your efforts are truly paying off.',
+    'Lighter by {delta} kg today! Total loss stands at {loss} kg 💪 Fantastic progress!',
+  ],
+  up: [
+    'Weight went up by {delta} kg? Completely normal 🤗 Water retention and digestion fluctuate daily.',
+    'Small weight fluctuation ❤️ Don’t let the scale discourage you. Stick to the plan and trust the trend.',
+  ],
+  kcalOk: [
+    'Diet was right on target today! 🥗 Eating well is the foundation of sustainable health.',
+  ],
+  kcalOver: [
+    'Ate a little extra today? No guilt! 😊 One meal never breaks your journey. Onward tomorrow!',
+    'Ate over target? It happens to everyone ❤️ What matters is you kept logging honestly.',
+  ],
+  flat: [
+    'Weight held steady ⚖️ Plateau or plateau-free, consistency without rebound is a victory.',
+    'Another solid day logged 💪 Total weight lost: {loss} kg. Every single day counts!',
+  ],
+};
+
 function fill(tpl: string, ctx: EncourageContext): string {
   const delta = ctx.delta === null ? '0' : Math.abs(ctx.delta).toFixed(1);
   return tpl
@@ -124,8 +165,9 @@ function fill(tpl: string, ctx: EncourageContext): string {
 }
 
 /** 离线兜底鼓励语 */
-export function offlineEncouragement(ctx: EncourageContext, rand: () => number = Math.random): string {
-  const list = CORPUS[pickScenario(ctx)];
+export function offlineEncouragement(ctx: EncourageContext, rand: () => number = Math.random, lang: Lang = 'zh'): string {
+  const dict = lang === 'en' ? CORPUS_EN : CORPUS;
+  const list = dict[pickScenario(ctx)] || CORPUS[pickScenario(ctx)];
   const tpl = list[Math.floor(rand() * list.length) % list.length];
   return fill(tpl, ctx);
 }

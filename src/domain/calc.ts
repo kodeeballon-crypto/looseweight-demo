@@ -9,12 +9,27 @@ export const ACTIVITY_FACTOR: Record<Activity, number> = {
   active: 1.725,
 };
 
-export const ACTIVITY_LABELS: Record<Activity, string> = {
-  sedentary: '久坐（几乎不运动）',
-  light: '轻度（每周 1–3 次）',
-  moderate: '中度（每周 3–5 次）',
-  active: '高强度（每周 6–7 次）',
+import type { Lang } from '../i18n/types';
+
+export const ACTIVITY_LABELS_MAP: Record<Lang, Record<Activity, string>> = {
+  zh: {
+    sedentary: '久坐（几乎不运动）',
+    light: '轻度（每周 1–3 次）',
+    moderate: '中度（每周 3–5 次）',
+    active: '高强度（每周 6–7 次）',
+  },
+  en: {
+    sedentary: 'Sedentary (little to no exercise)',
+    light: 'Light (exercise 1–3 days/wk)',
+    moderate: 'Moderate (exercise 3–5 days/wk)',
+    active: 'Active (hard exercise 6–7 days/wk)',
+  },
 };
+export const ACTIVITY_LABELS: Record<Activity, string> = ACTIVITY_LABELS_MAP.zh;
+
+export function getActivityLabel(activity: Activity, lang: Lang = 'zh'): string {
+  return ACTIVITY_LABELS_MAP[lang]?.[activity] ?? ACTIVITY_LABELS_MAP.zh[activity];
+}
 
 export const KCAL_FLOOR: Record<Sex, number> = { male: 1500, female: 1200 };
 
@@ -35,12 +50,18 @@ export function calcBmi(weightKg: number, heightCm: number): number {
   return weightKg / (m * m);
 }
 
+const BMI_LABELS_MAP: Record<Lang, Record<BmiLevelKey, string>> = {
+  zh: { under: '偏瘦', normal: '正常', over: '超重', obese: '肥胖' },
+  en: { under: 'Underweight', normal: 'Normal', over: 'Overweight', obese: 'Obese' },
+};
+
 /** 中国标准：<18.5 偏瘦，18.5–23.9 正常，24–27.9 超重，≥28 肥胖 */
-export function bmiLevel(bmi: number): BmiLevel {
-  if (bmi < 18.5) return { key: 'under', label: '偏瘦', rank: 0 };
-  if (bmi < 24) return { key: 'normal', label: '正常', rank: 1 };
-  if (bmi < 28) return { key: 'over', label: '超重', rank: 2 };
-  return { key: 'obese', label: '肥胖', rank: 3 };
+export function bmiLevel(bmi: number, lang: Lang = 'zh'): BmiLevel {
+  const labels = BMI_LABELS_MAP[lang] ?? BMI_LABELS_MAP.zh;
+  if (bmi < 18.5) return { key: 'under', label: labels.under, rank: 0 };
+  if (bmi < 24) return { key: 'normal', label: labels.normal, rank: 1 };
+  if (bmi < 28) return { key: 'over', label: labels.over, rank: 2 };
+  return { key: 'obese', label: labels.obese, rank: 3 };
 }
 
 // ---------- 能量 ----------
@@ -127,11 +148,23 @@ export function kcalStatus(intake: number, target: number): KcalStatus {
   return 'over';
 }
 
-export const KCAL_STATUS_LABEL: Record<KcalStatus, string> = {
-  ok: '达标',
-  slight: '略超',
-  over: '超标',
+export const KCAL_STATUS_LABEL_MAP: Record<Lang, Record<KcalStatus, string>> = {
+  zh: {
+    ok: '达标',
+    slight: '略超',
+    over: '超标',
+  },
+  en: {
+    ok: 'On Track',
+    slight: 'Slightly Over',
+    over: 'Over Limit',
+  },
 };
+export const KCAL_STATUS_LABEL: Record<KcalStatus, string> = KCAL_STATUS_LABEL_MAP.zh;
+
+export function getKcalStatusLabel(status: KcalStatus, lang: Lang = 'zh'): string {
+  return KCAL_STATUS_LABEL_MAP[lang]?.[status] ?? KCAL_STATUS_LABEL_MAP.zh[status];
+}
 
 // ---------- 均线 ----------
 

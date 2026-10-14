@@ -2,8 +2,19 @@ import type { DailyRecord, MacroKind, Macros, Meal, MealKey, NutritionAnalysis, 
 import { MEAL_KEYS } from '../types';
 import { round1 } from './calc';
 
+import type { Lang } from '../i18n/types';
+
 export const MACRO_KINDS: MacroKind[] = ['protein', 'carbs', 'fat'];
-export const MACRO_LABELS: Record<MacroKind, string> = { protein: '蛋白质', carbs: '碳水', fat: '脂肪' };
+export const MACRO_LABELS_MAP: Record<Lang, Record<MacroKind, string>> = {
+  zh: { protein: '蛋白质', carbs: '碳水', fat: '脂肪' },
+  en: { protein: 'Protein', carbs: 'Carbs', fat: 'Fat' },
+};
+export const MACRO_LABELS: Record<MacroKind, string> = MACRO_LABELS_MAP.zh;
+
+export function getMacroLabel(kind: MacroKind, lang: Lang = 'zh'): string {
+  return MACRO_LABELS_MAP[lang]?.[kind] ?? MACRO_LABELS_MAP.zh[kind];
+}
+
 export const MACRO_COLORS: Record<MacroKind, string> = { protein: '#22c7e8', carbs: '#f5b544', fat: '#f0609e' };
 /** 每克热量 */
 const KCAL_PER_G: Record<MacroKind, number> = { protein: 4, carbs: 4, fat: 9 };
@@ -11,7 +22,15 @@ const KCAL_PER_G: Record<MacroKind, number> = { protein: 4, carbs: 4, fat: 9 };
 export const MACRO_RANGE: Record<MacroKind, [number, number]> = { protein: [25, 35], carbs: [40, 50], fat: [20, 30] };
 
 export type ShareRating = 'low' | 'ok' | 'high';
-export const RATING_LABELS: Record<ShareRating, string> = { low: '偏低', ok: '合适', high: '偏高' };
+export const RATING_LABELS_MAP: Record<Lang, Record<ShareRating, string>> = {
+  zh: { low: '偏低', ok: '合适', high: '偏高' },
+  en: { low: 'Low', ok: 'Optimal', high: 'High' },
+};
+export const RATING_LABELS: Record<ShareRating, string> = RATING_LABELS_MAP.zh;
+
+export function getRatingLabel(rating: ShareRating, lang: Lang = 'zh'): string {
+  return RATING_LABELS_MAP[lang]?.[rating] ?? RATING_LABELS_MAP.zh[rating];
+}
 
 export interface TodayMeals {
   keys: MealKey[];

@@ -72,4 +72,11 @@ describe('adjustPlanMessages', () => {
     expect(hist[0].content).toBe('消息4');
     expect(hist.map((h) => h.role)).toEqual(['user', 'assistant', 'user', 'assistant', 'user', 'assistant']);
   });
+
+  it('lang=en 时要求 AI 以英文输出食谱与鼓励语', () => {
+    const enPlanMsgs = weekPlanMessages(profile, 78, 1700, [], 'en');
+    expect(enPlanMsgs.at(-1)!.content).toContain('Output language: English.');
+    expect(enPlanMsgs.at(-1)!.content).toContain('MUST be written in natural, concise English');
+  });
 });
+

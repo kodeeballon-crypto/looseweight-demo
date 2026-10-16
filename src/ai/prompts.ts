@@ -3,8 +3,12 @@ import type { DailyRecord, KcalStatus, Meal, MealKey, PlanChatMessage, Profile, 
 import { MEAL_KEYS, MEAL_LABELS, WEEKDAY_LABELS } from '../types';
 import { ACTIVITY_LABELS, KCAL_STATUS_LABEL, bmiLevel, calcBmi, round1 } from '../domain/calc';
 import { lifestyleOf, lifestyleText } from '../domain/lifestyle';
+import { getLang } from '../i18n';
+import type { Lang } from '../i18n/types';
 
 const SEX_LABEL = { male: '男', female: '女' } as const;
+
+const EN_DIET_RULE = `\n\n【Output Language Requirement】\nOutput language: English.\nAll user-facing text fields ("name", "items", "tips", "reply", "memoryAdd") MUST be written in natural, concise English while keeping the Chinese home-cooking (Chinese home cooking) fat-loss cuisine style. Output strictly valid JSON only.`;
 
 // ---------- 7.1 周食谱 ----------
 
@@ -27,7 +31,13 @@ const WEEK_EXAMPLE = `{
   "tips": ["要点1", "要点2", "要点3"]
 }`;
 
-export function weekPlanMessages(profile: Profile, currentWeight: number, kcalTarget: number, memory: string[] = []): ChatMessage[] {
+export function weekPlanMessages(
+  profile: Profile,
+  currentWeight: number,
+  kcalTarget: number,
+  memory: string[] = [],
+  lang: Lang = getLang(),
+): ChatMessage[] {
   const bmi = calcBmi(currentWeight, profile.heightCm);
   const memoryBlock = memory.length ? `\n【长期要求】（必须遵守）\n${memory.map((s) => `- ${s}`).join('\n')}\n` : '';
   const user = `请为我制定一周（周一到周日）的减脂饮食计划。
@@ -59,7 +69,7 @@ ${memoryBlock}
 10. days 数组必须正好 7 项，weekday 依次为 1–7（周一=1）。
 
 【输出 JSON 结构示例（只示意 1 天，你需要输出完整 7 天）】
-${WEEK_EXAMPLE}`;
+${WEEK_EXAMPLE}${lang === 'en' ? EN_DIET_RULE : ''}`;
 
   return [
     { role: 'system', content: WEEK_SYSTEM },
@@ -74,6 +84,7 @@ export function replaceMealMessages(
   mealKey: MealKey,
   original: Meal,
   otherMeals: Partial<Record<MealKey, Meal>>,
+  lang: Lang = getLang(),
 ): ChatMessage[] {
   const min = Math.round(original.kcal * 0.85);
   const max = Math.round(original.kcal * 1.15);
@@ -93,7 +104,7 @@ ${others || '- 无'}
 3. 饮食偏好/忌口：${profile.preferences?.trim() || '无特别要求'}。
 4. items 写清楚份量（克/毫升/个）。
 
-只输出 JSON：{ "name": "菜名", "items": "份量说明", "kcal": 整数 }`;
+只输出 JSON：{ "name": "菜名", "items": "份量说明", "kcal": 整数 }${lang === 'en' ? EN_DIET_RULE : ''}`;
 
   return [
     { role: 'system', content: WEEK_SYSTEM },
@@ -125,7 +136,7 @@ export interface AdjustInput {
 const ADJUST_SYSTEM = `${WEEK_SYSTEM}
 你同时是用户的饮食顾问，会根据用户反馈的实际情况（作息、预算、口味、身体感受）对现有周表做最小必要的修改。`;
 
-export function adjustPlanMessages({ profile, kcalTarget, plan, memory, history, userText }: AdjustInput): ChatMessage[] {
+export function adjustPlanMessages({ profile, kcalTarget, plan, memory, history, userText }: AdjustInput, lang: Lang = getLang()): ChatMessage[] {
   const ctx = `【个人信息】${SEX_LABEL[profile.sex]}，${profile.age} 岁，目标体重 ${profile.targetWeightKg} kg，每日热量目标 ${kcalTarget} kcal
 【饮食偏好/忌口】${profile.preferences?.trim() || '无特别要求'}
 【生活节奏】${lifestyleText(lifestyleOf(profile))}
@@ -145,7 +156,7 @@ ${userText}
 5. reply 用 40–120 字口语化说明改了什么、为什么。
 6. weekday 为 1–7（周一=1），meal 为 breakfast/lunch/dinner/snack。
 
-只输出 JSON：{ "reply": "说明", "changes": [{ "weekday": 1, "meal": "breakfast", "name": "菜名", "items": "份量", "kcal": 整数 }], "memoryAdd": [], "memoryRemove": [] }`;
+只输出 JSON：{ "reply": "说明", "changes": [{ "weekday": 1, "meal": "breakfast", "name": "菜名", "items": "份量", "kcal": 整数 }], "memoryAdd": [], "memoryRemove": [] }${lang === 'en' ? EN_DIET_RULE : ''}`;
 
   return [
     { role: 'system', content: ADJUST_SYSTEM },
@@ -166,9 +177,14 @@ export interface EncourageInput {
   targetWeight: number;
 }
 
-export function encouragementMessages(profile: Profile, input: EncourageInput): ChatMessage[] {
+export function encouragementMessages(profile: Profile, input: EncourageInput, lang: Lang = getLang()): ChatMessage[] {
   const series = input.recent.map((r) => `${r.date.slice(5)} ${r.weightKg}kg`).join('，');
   const fmt = (n: number | null) => (n === null ? '暂无' : `${n > 0 ? '+' : ''}${n.toFixed(1)} kg`);
+
+  const enInstruction =
+    lang === 'en'
+      ? `\n\n【Output Language Requirement】\nOutput language: English.\nWrite the "text" field in warm, sincere, natural English (60–110 words, 1–2 emojis), referencing the specific data above. Output strictly valid JSON only: { "text": "encouragement in English" }`
+      : '';
 
   const user = `我正在减重，今天刚完成打卡，请给我一段鼓励。
 
@@ -187,7 +203,7 @@ export function encouragementMessages(profile: Profile, input: EncourageInput): 
 3. 如果体重上升，解释这可能是正常波动（水分、钠摄入、睡眠、生理期等）并安抚情绪。
 4. 不给任何医疗建议。
 
-只输出 JSON：{ "text": "鼓励内容" }`;
+只输出 JSON：{ "text": "鼓励内容" }${enInstruction}`;
 
   return [
     { role: 'system', content: '你是一位温暖、真诚、懂营养学的减重陪伴教练。你只输出合法 JSON。' },

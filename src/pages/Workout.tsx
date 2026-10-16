@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { useStore } from '../store/useStore';
 import { toast } from '../store/toast';
 import type { Exercise, TrainingPrefs, Weekday } from '../types';
-import { getWeekdayLabel } from '../types';
+import { getWeekdayLabel, getWorkoutTips } from '../types';
 import { chat, errorMessage, isAiConfigured } from '../ai/client';
 import { replaceExerciseMessages, workoutPlanMessages } from '../ai/workoutPrompts';
 import { parseExercise, parseWorkoutPlan } from '../ai/parseWorkout';
@@ -252,13 +252,13 @@ export default function Workout() {
               onSwap={swap}
             />
 
-            {workoutPlan.tips && workoutPlan.tips.length > 0 && (
+            {getWorkoutTips(workoutPlan, lang).length > 0 && (
               <section className="card mt-24">
                 <div className="card-title">
                   <h2>{lang === 'en' ? '💡 Weekly Workout Tips' : '💡 本周训练要点'}</h2>
                 </div>
                 <div className="tips">
-                  {workoutPlan.tips.map((t, i) => (
+                  {getWorkoutTips(workoutPlan, lang).map((t, i) => (
                     <div className="tip" key={i}>
                       <span className="tip-no" style={{ background: 'var(--grad-burn)', color: '#fff' }}>
                         {i + 1}

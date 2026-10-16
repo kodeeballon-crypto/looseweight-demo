@@ -1,5 +1,5 @@
 import type { Meal, MealKey, WeekPlan, Weekday } from '../types';
-import { MEAL_EMOJI, MEAL_KEYS, WEEKDAY_LABELS_MAP, getMealLabel } from '../types';
+import { MEAL_EMOJI, MEAL_KEYS, WEEKDAY_LABELS_MAP, getMealLabel, getMealText } from '../types';
 import { useT } from '../i18n';
 
 interface Props {
@@ -42,6 +42,8 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
               const id = cellId(d.weekday, k);
               const next = preview?.get(id);
               const m = next ?? d.meals[k];
+              const mText = getMealText(m, lang);
+              const origText = getMealText(d.meals[k], lang);
               const busy = busyCell === id;
               return (
                 <div
@@ -50,13 +52,13 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
                   className={`wk-cell ${hl(d.weekday)} ${busy ? 'busy' : ''} ${next ? 'is-preview' : ''}`}
                   onClick={() => !next && onEdit(d.weekday, k)}
                   title={next
-                    ? (lang === 'en' ? `Original: ${d.meals[k].name} (${d.meals[k].kcal} kcal)` : `原：${d.meals[k].name}（${d.meals[k].kcal} kcal）`)
+                    ? (lang === 'en' ? `Original: ${origText.name} (${d.meals[k].kcal} kcal)` : `原：${origText.name}（${d.meals[k].kcal} kcal）`)
                     : (lang === 'en' ? 'Click to edit' : '点击编辑')}
                 >
                   {next && <span className="preview-flag">{lang === 'en' ? 'Pending' : '待应用'}</span>}
-                  <div className="wk-name">{m.name}</div>
-                  {next && <div className="wk-old">{d.meals[k].name}</div>}
-                  <div className="wk-items">{m.items}</div>
+                  <div className="wk-name">{mText.name}</div>
+                  {next && <div className="wk-old">{origText.name}</div>}
+                  <div className="wk-items">{mText.items}</div>
                   <span className="tag tag-kcal num">{m.kcal} kcal</span>
                   {aiReady && !next && (
                     <button

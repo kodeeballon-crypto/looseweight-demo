@@ -6,6 +6,8 @@ import { energyInfo, intakeOf, kcalStatus, movingAverage7, round1, sortRecords }
 import { calcStreak } from '../domain/badges';
 import { offlineEncouragement } from '../domain/encourage';
 import type { DailyRecord, Profile, Settings, WeekPlan } from '../types';
+import { getLang } from '../i18n';
+import type { Lang } from '../i18n/types';
 
 export const todayStr = () => dayjs().format('YYYY-MM-DD');
 
@@ -16,6 +18,7 @@ interface Input {
   settings: Settings;
   date: string;
   newMilestone: boolean;
+  lang?: Lang;
 }
 
 export interface EncourageResult {
@@ -25,7 +28,7 @@ export interface EncourageResult {
 }
 
 /** 生成某天的鼓励语：已配置 AI 时调用 AI，失败或未配置则走离线语料 */
-export async function generateEncouragement({ profile, records, plan, settings, date, newMilestone }: Input): Promise<EncourageResult> {
+export async function generateEncouragement({ profile, records, plan, settings, date, newMilestone, lang = getLang() }: Input): Promise<EncourageResult> {
   const sorted = sortRecords(records).filter((r) => r.date <= date);
   const today = sorted.at(-1);
   if (!today) return { text: '', source: 'offline' };
@@ -38,7 +41,7 @@ export async function generateEncouragement({ profile, records, plan, settings, 
   const totalLoss = round1(profile.startWeightKg - today.weightKg);
 
   const offline = () =>
-    offlineEncouragement({ isFirst: sorted.length === 1, delta, streak, kcal, newMilestone, totalLoss });
+    offlineEncouragement({ isFirst: sorted.length === 1, delta, streak, kcal, newMilestone, totalLoss }, Math.random, lang);
 
   if (!isAiConfigured(settings)) return { text: offline(), source: 'offline' };
 
@@ -53,7 +56,7 @@ export async function generateEncouragement({ profile, records, plan, settings, 
   try {
     const raw = await chat(
       settings,
-      encouragementMessages(profile, { recent, delta, avgTrend, kcal, streak, totalLoss, targetWeight: profile.targetWeightKg }),
+      encouragementMessages(profile, { recent, delta, avgTrend, kcal, streak, totalLoss, targetWeight: profile.targetWeightKg }, lang),
       { timeoutMs: 20000, json: true, temperature: 0.9 },
     );
     return { text: parseEncouragement(raw), source: 'ai' };

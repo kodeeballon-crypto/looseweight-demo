@@ -1,14 +1,24 @@
 import type { ChatMessage } from './client';
 import type { Meal, MealKey, Profile } from '../types';
 import { MEAL_KEYS, MEAL_LABELS } from '../types';
+import { getLang } from '../i18n';
+import type { Lang } from '../i18n/types';
 
 const SEX_LABEL = { male: '男', female: '女' } as const;
 
 const NUTRITIONIST_SYSTEM = `你是一名注册营养师，擅长估算家常菜的三大营养素并点评减脂期的饮食结构。
 你只输出一个合法的 JSON 对象，不要输出任何解释文字、不要使用 markdown 代码块。`;
 
+const EN_NUTRITION_RULE = `\n\n【Output Language Requirement】\nOutput language: English.\n"summary" and "suggestions" MUST be written in natural, concise English. Output strictly valid JSON only.`;
+
 /** 让 AI 估算今日各餐的蛋白质/碳水/脂肪克数，并点评结构 */
-export function nutritionMessages(profile: Profile, kcalTarget: number, keys: MealKey[], meals: Partial<Record<MealKey, Meal>>): ChatMessage[] {
+export function nutritionMessages(
+  profile: Profile,
+  kcalTarget: number,
+  keys: MealKey[],
+  meals: Partial<Record<MealKey, Meal>>,
+  lang: Lang = getLang(),
+): ChatMessage[] {
   const ordered = MEAL_KEYS.filter((k) => keys.includes(k) && meals[k]);
   const lines = ordered.map((k) => `- ${k}（${MEAL_LABELS[k]}）｜${meals[k]!.name}｜${meals[k]!.items}｜${meals[k]!.kcal} kcal`).join('\n');
   const example = ordered.map((k) => `"${k}": { "protein": 克, "carbs": 克, "fat": 克 }`).join(', ');
@@ -25,7 +35,7 @@ ${lines}
 3. 给出最多 3 条具体可执行的改进建议（例如把某样食物换成什么、增减多少克）。
 4. meals 中必须包含且只包含上面列出的餐次键。
 
-只输出 JSON：{ "meals": { ${example} }, "summary": "点评", "suggestions": ["建议1"] }`;
+只输出 JSON：{ "meals": { ${example} }, "summary": "点评", "suggestions": ["建议1"] }${lang === 'en' ? EN_NUTRITION_RULE : ''}`;
 
   return [
     { role: 'system', content: NUTRITIONIST_SYSTEM },

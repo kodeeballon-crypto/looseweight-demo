@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { useStore } from '../store/useStore';
 import { toast } from '../store/toast';
 import type { MealKey, Weekday } from '../types';
-import { MEAL_KEYS, getMealLabel, getWeekdayLabel } from '../types';
+import { MEAL_KEYS, getMealLabel, getPlanTips, getWeekdayLabel } from '../types';
 import { chat, errorMessage, isAiConfigured } from '../ai/client';
 import { replaceMealMessages, weekPlanMessages } from '../ai/prompts';
 import { parseMeal, parseWeekPlan } from '../ai/parse';
@@ -145,11 +145,11 @@ export default function MealPlan() {
 
             <NutritionCard />
 
-            {plan.tips && plan.tips.length > 0 && (
+            {getPlanTips(plan, lang).length > 0 && (
               <section className="card mt-24">
                 <div className="card-title"><h2>{lang === 'en' ? '💡 Weekly Tips' : '💡 本周要点'}</h2></div>
                 <div className="tips">
-                  {plan.tips.map((t, i) => (
+                  {getPlanTips(plan, lang).map((t, i) => (
                     <div className="tip" key={i}>
                       <span className="tip-no">{i + 1}</span>
                       <span>{t}</span>

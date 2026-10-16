@@ -14,8 +14,11 @@ import KcalRing from '../components/KcalRing';
 import GoalProgress from '../components/GoalProgress';
 import TodayProgress from '../components/TodayProgress';
 import { showBadges } from '../components/BadgePopup';
+import LangSwitch from '../components/LangSwitch';
 import { useT } from '../i18n';
 import type { Lang } from '../i18n/types';
+import { getRecordEncouragement } from '../types';
+import { useTranslateStatus } from '../services/aiTranslate';
 
 const BMI_COLOR = { under: '#228be6', normal: '#0ca678', over: '#e67700', obese: '#e03131' } as const;
 const WEEK_ZH = ['日', '一', '二', '三', '四', '五', '六'];
@@ -39,12 +42,15 @@ function greeting(lang: Lang) {
 export default function Dashboard() {
   const { profile, records, plan, settings, seenBadges, workoutPlan, workoutLog, upsertRecord, setEncouragement } = useStore();
   const [genBusy, setGenBusy] = useState(false);
+  const translatingEncourage = useTranslateStatus((s) => s.encouragement);
   const { t, lang } = useT();
 
   if (!profile) return null;
 
   const today = todayStr();
   const todayRec = records.find((r) => r.date === today);
+  const activeEncourage = getRecordEncouragement(todayRec, lang);
+  const isEncourageBusy = genBusy || (lang === 'en' && translatingEncourage);
   const info = energyInfo(profile, records);
   const stats = computeStats(profile, records, plan, info.target, workoutLog);
   const streak = calcStreak(records, today);
@@ -57,24 +63,24 @@ export default function Dashboard() {
   const doneIds = new Set((workoutLog[today] ?? []).map((e) => e.id));
   const doneCount = todayWorkout ? todayWorkout.exercises.filter((e) => doneIds.has(e.id)).length : 0;
 
-  const runEncourage = async (newMilestone: boolean) => {
+  const runEncourage = async (newMilestone: boolean, targetLang: Lang = lang) => {
     const s = useStore.getState();
     setGenBusy(true);
-    const res = await generateEncouragement({ ...s, profile, date: today, newMilestone });
+    const res = await generateEncouragement({ ...s, profile, date: today, newMilestone, lang: targetLang });
     setGenBusy(false);
-    if (res.text) setEncouragement(today, res.text);
-    if (res.error) toast(lang === 'en' ? `AI encourage failed, used offline template: ${res.error}` : `AI 鼓励生成失败，已使用内置鼓励：${res.error}`, 'error');
+    if (res.text) setEncouragement(today, res.text, targetLang);
+    if (res.error) toast(targetLang === 'en' ? `AI encourage failed, used offline template: ${res.error}` : `AI 鼓励生成失败，已使用内置鼓励：${res.error}`, 'error');
   };
 
   const onSubmit = async (v: CheckInValues) => {
     const first = !todayRec;
-    upsertRecord({ ...v, encouragement: todayRec?.encouragement });
+    upsertRecord({ ...v, encouragement: todayRec?.encouragement, encouragementEn: todayRec?.encouragementEn });
     toast(first ? (lang === 'en' ? 'Check-in saved!' : '打卡成功！') : (lang === 'en' ? 'Updated today’s check-in' : '已更新今日打卡'), 'success');
 
     const after = useStore.getState().records;
     const fresh = newBadges(unlockedBadges(profile, after, today, lang), seenBadges);
     showBadges(fresh);
-    if (!todayRec?.encouragement) await runEncourage(fresh.length > 0);
+    if (!activeEncourage) await runEncourage(fresh.length > 0, lang);
   };
 
   const dateSub = lang === 'en'
@@ -88,8 +94,11 @@ export default function Dashboard() {
           <h1>{greeting(lang)}</h1>
           <p>{dateSub}</p>
         </div>
-        <div className="streak-chip" id="streak-chip">
-          <span className="flame">🔥</span> {t('common.streakDays', { n: streak })}
+        <div className="row">
+          <div className="streak-chip" id="streak-chip">
+            <span className="flame">🔥</span> {t('common.streakDays', { n: streak })}
+          </div>
+          <LangSwitch />
         </div>
       </div>
 
@@ -153,20 +162,20 @@ export default function Dashboard() {
             <div className="card-title">
               <h2>{lang === 'en' ? '💌 A Word For You' : '💌 给你的话'}</h2>
               {todayRec && (
-                <button id="encourage-refresh" className="btn btn-sm btn-ghost" disabled={genBusy} onClick={() => runEncourage(false)}>
-                  {genBusy ? <span className="spinner" /> : '🔄'} {lang === 'en' ? 'Shuffle' : '换一句'}
+                <button id="encourage-refresh" className="btn btn-sm btn-ghost" disabled={isEncourageBusy} onClick={() => runEncourage(false, lang)}>
+                  {isEncourageBusy ? <span className="spinner" /> : '🔄'} {lang === 'en' ? 'Shuffle' : '换一句'}
                 </button>
               )}
             </div>
-            {genBusy && !todayRec?.encouragement ? (
+            {isEncourageBusy && !activeEncourage ? (
               <div className="stack" style={{ gap: 10 }}>
                 <div className="skeleton" style={{ height: 16 }} />
                 <div className="skeleton" style={{ height: 16, width: '85%' }} />
                 <div className="skeleton" style={{ height: 16, width: '60%' }} />
               </div>
-            ) : todayRec?.encouragement ? (
-              <p className="encourage-text" key={todayRec.encouragement} style={{ margin: 0 }}>
-                {todayRec.encouragement}
+            ) : activeEncourage ? (
+              <p className="encourage-text" key={activeEncourage} style={{ margin: 0 }}>
+                {activeEncourage}
               </p>
             ) : (
               <p className="encourage-empty" style={{ margin: 0 }}>

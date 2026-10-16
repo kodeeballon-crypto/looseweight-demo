@@ -62,6 +62,8 @@ export const MEAL_EMOJI: Record<MealKey, string> = {
   snack: '🍎',
 };
 
+export const hasCjk = (s?: string): boolean => Boolean(s && /[\u4e00-\u9fff]/.test(s));
+
 export interface DailyRecord {
   /** YYYY-MM-DD，唯一 */
   date: string;
@@ -69,12 +71,36 @@ export interface DailyRecord {
   mealsEaten: MealKey[];
   extraKcal?: number;
   encouragement?: string;
+  encouragementEn?: string;
+}
+
+export function getRecordEncouragement(rec: DailyRecord | undefined, lang: Lang = 'zh'): string | undefined {
+  if (!rec) return undefined;
+  if (lang === 'en') {
+    if (rec.encouragementEn?.trim()) return rec.encouragementEn;
+    if (rec.encouragement?.trim() && !hasCjk(rec.encouragement)) return rec.encouragement;
+    return undefined;
+  }
+  if (rec.encouragement?.trim() && hasCjk(rec.encouragement)) return rec.encouragement;
+  return rec.encouragement;
 }
 
 export interface Meal {
   name: string;
   items: string;
   kcal: number;
+  nameEn?: string;
+  itemsEn?: string;
+}
+
+export function getMealText(meal: Meal, lang: Lang = 'zh'): { name: string; items: string } {
+  if (lang === 'en') {
+    return {
+      name: meal.nameEn?.trim() || meal.name,
+      items: meal.itemsEn?.trim() || meal.items,
+    };
+  }
+  return { name: meal.name, items: meal.items };
 }
 
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -101,6 +127,12 @@ export interface WeekPlan {
   dailyKcalTarget: number;
   days: DayPlan[];
   tips?: string[];
+  tipsEn?: string[];
+}
+
+export function getPlanTips(plan: WeekPlan, lang: Lang = 'zh'): string[] {
+  if (lang === 'en' && plan.tipsEn && plan.tipsEn.length > 0) return plan.tipsEn;
+  return plan.tips ?? [];
 }
 
 export interface Settings {
@@ -164,19 +196,43 @@ export interface Exercise {
   /** 组数×次数或时长 + 要点 */
   detail: string;
   kcal: number;
+  nameEn?: string;
+  detailEn?: string;
+}
+
+export function getExerciseText(ex: Exercise, lang: Lang = 'zh'): { name: string; detail: string } {
+  if (lang === 'en') {
+    return {
+      name: ex.nameEn?.trim() || ex.name,
+      detail: ex.detailEn?.trim() || ex.detail,
+    };
+  }
+  return { name: ex.name, detail: ex.detail };
 }
 
 export interface WorkoutDay {
   weekday: Weekday;
   /** 训练重点，如“下肢力量”“休息·拉伸” */
   focus: string;
+  focusEn?: string;
   exercises: Exercise[];
+}
+
+export function getWorkoutFocus(day: WorkoutDay, lang: Lang = 'zh'): string {
+  if (lang === 'en' && day.focusEn?.trim()) return day.focusEn;
+  return day.focus;
 }
 
 export interface WorkoutPlan {
   createdAt: string;
   days: WorkoutDay[];
   tips?: string[];
+  tipsEn?: string[];
+}
+
+export function getWorkoutTips(plan: WorkoutPlan, lang: Lang = 'zh'): string[] {
+  if (lang === 'en' && plan.tipsEn && plan.tipsEn.length > 0) return plan.tipsEn;
+  return plan.tips ?? [];
 }
 
 /** 已完成动作快照：勾选时记录，之后改周表不影响历史 */
@@ -222,8 +278,20 @@ export interface NutritionAnalysis {
   meals: Partial<Record<MealKey, Macros>>;
   summary: string;
   suggestions: string[];
+  summaryEn?: string;
+  suggestionsEn?: string[];
   /** ISO 时间 */
   at: string;
+}
+
+export function getNutritionText(a: NutritionAnalysis, lang: Lang = 'zh'): { summary: string; suggestions: string[] } {
+  if (lang === 'en') {
+    return {
+      summary: a.summaryEn?.trim() || a.summary,
+      suggestions: a.suggestionsEn && a.suggestionsEn.length > 0 ? a.suggestionsEn : a.suggestions,
+    };
+  }
+  return { summary: a.summary, suggestions: a.suggestions };
 }
 
 export type NutritionCache = Record<string, NutritionAnalysis>;

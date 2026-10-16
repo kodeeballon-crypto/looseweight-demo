@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { WorkoutDay } from '../types';
-import { MEAL_KEYS } from '../types';
+import { MEAL_KEYS, getWorkoutFocus } from '../types';
 import { useT } from '../i18n';
 
 interface Props {
@@ -61,9 +61,9 @@ export default function TodayProgress({ mealsEaten, workout, doneCount, burned }
         {workout && !restDay && !trainDone && (
           <div className="field-hint mt-8">
             {lang === 'en' ? (
-              <>Focus: "{workout.focus}". <Link to="/workout">Log workout →</Link></>
+              <>Focus: "{getWorkoutFocus(workout, lang)}". <Link to="/workout">Log workout →</Link></>
             ) : (
-              <>今天练「{workout.focus}」，<Link to="/workout">去打卡训练 →</Link></>
+              <>今天练「{getWorkoutFocus(workout, lang)}」，<Link to="/workout">去打卡训练 →</Link></>
             )}
           </div>
         )}

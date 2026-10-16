@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { toast } from '../store/toast';
-import { MEAL_EMOJI, MEAL_KEYS, getMealLabel } from '../types';
+import { MEAL_EMOJI, MEAL_KEYS, getMealLabel, getNutritionText } from '../types';
 import { chat, errorMessage, isAiConfigured } from '../ai/client';
 import { nutritionMessages } from '../ai/nutritionPrompts';
 import { parseNutrition } from '../ai/parseNutrition';
@@ -134,10 +134,10 @@ export default function NutritionCard() {
 
           <div className="nutri-summary">
             <div className="nutri-summary-title">{lang === 'en' ? '🧑‍⚕️ AI Dietitian Comments' : '🧑‍⚕️ AI 营养师点评'}</div>
-            <p>{analysis.summary}</p>
-            {analysis.suggestions.length > 0 && (
+            <p>{getNutritionText(analysis, lang).summary}</p>
+            {getNutritionText(analysis, lang).suggestions.length > 0 && (
               <ul className="nutri-tips">
-                {analysis.suggestions.map((s, i) => (
+                {getNutritionText(analysis, lang).suggestions.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
               </ul>

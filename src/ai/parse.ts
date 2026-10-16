@@ -52,9 +52,11 @@ export function normalizeMeal(raw: unknown): Meal | null {
   const o = raw as Record<string, unknown>;
   const name = typeof o.name === 'string' ? o.name.trim() : '';
   const items = typeof o.items === 'string' ? o.items.trim() : Array.isArray(o.items) ? o.items.join('、') : '';
+  const nameEn = typeof o.nameEn === 'string' ? o.nameEn.trim() : undefined;
+  const itemsEn = typeof o.itemsEn === 'string' ? o.itemsEn.trim() : undefined;
   const kcal = toKcal(o.kcal);
   if (!name || kcal === null) return null;
-  return { name, items, kcal };
+  return { name, items, kcal, ...(nameEn ? { nameEn } : {}), ...(itemsEn ? { itemsEn } : {}) };
 }
 
 /** 解析周食谱：必须 7 天 × 4 餐，kcal 为正数 */

@@ -11,7 +11,7 @@ import { ConfirmHost } from './components/Modal';
 import { BadgeHost } from './components/BadgePopup';
 
 import { useT } from './i18n';
-import LangSwitch from './components/LangSwitch';
+import { useAiTranslateSync } from './services/aiTranslate';
 
 /** 未填写档案时，任意页面重定向到设置页的档案表单 */
 function Guard({ children }: { children: ReactNode }) {
@@ -23,6 +23,7 @@ function Guard({ children }: { children: ReactNode }) {
 
 function Shell() {
   const { t } = useT();
+  useAiTranslateSync();
 
   const navItems = [
     { to: '/', ico: '🏠', label: t('nav.today'), id: 'nav-home' },
@@ -41,7 +42,6 @@ function Shell() {
             <div className="brand-name grad-text">{t('app.title')}</div>
             <div className="brand-sub">{t('app.slogan')}</div>
           </div>
-          <LangSwitch className="brand-lang" />
         </div>
         <nav className="nav">
           {navItems.map((n) => (

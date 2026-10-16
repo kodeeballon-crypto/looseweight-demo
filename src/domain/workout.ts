@@ -88,7 +88,7 @@ export function isPrefs(x: unknown): x is TrainingPrefs {
   );
 }
 
-export const isRestDay = (d: WorkoutDay) => d.focus.includes('休息');
+export const isRestDay = (d: WorkoutDay) => d.focus.includes('休息') || /rest/i.test(d.focus);
 
 export const dayBurn = (d: WorkoutDay) => d.exercises.reduce((s, e) => s + e.kcal, 0);
 export const weekBurn = (p: WorkoutPlan) => p.days.reduce((s, d) => s + dayBurn(d), 0);

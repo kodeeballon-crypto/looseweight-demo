@@ -60,7 +60,7 @@ interface State {
   setProfile: (p: Profile) => void;
   upsertRecord: (r: DailyRecord) => void;
   deleteRecord: (date: string) => void;
-  setEncouragement: (date: string, text: string) => void;
+  setEncouragement: (date: string, text: string, lang?: 'zh' | 'en') => void;
   setPlan: (plan: WeekPlan) => void;
   updateMeal: (weekday: Weekday, key: MealKey, meal: Meal) => void;
   applyChanges: (changes: MealChange[]) => void;
@@ -145,8 +145,16 @@ export const useStore = create<State>()(
 
       deleteRecord: (date) => set({ records: get().records.filter((r) => r.date !== date) }),
 
-      setEncouragement: (date, text) =>
-        set({ records: get().records.map((r) => (r.date === date ? { ...r, encouragement: text } : r)) }),
+      setEncouragement: (date, text, lang = 'zh') =>
+        set({
+          records: get().records.map((r) =>
+            r.date === date
+              ? lang === 'en'
+                ? { ...r, encouragementEn: text, encouragement: r.encouragement || text }
+                : { ...r, encouragement: text }
+              : r,
+          ),
+        }),
 
       setPlan: (plan) => set({ plan }),
 

@@ -1,5 +1,5 @@
 import type { Exercise, WorkoutDay, WorkoutPlan, Weekday } from '../types';
-import { getWeekdayLabel } from '../types';
+import { getExerciseText, getWeekdayLabel, getWorkoutFocus } from '../types';
 import { dayBurn } from '../domain/workout';
 import { useT } from '../i18n';
 
@@ -35,7 +35,7 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
           return (
             <div key={d.weekday} className={`wk-day-head ${hl(d.weekday)}`}>
               {getWeekdayLabel(d.weekday, lang)}
-              <small>{shown.focus}</small>
+              <small>{getWorkoutFocus(shown, lang)}</small>
               {d.weekday === today && <span className="today-flag">TODAY</span>}
             </div>
           );
@@ -48,6 +48,7 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
         {days.map((d) => {
           const next = preview?.get(d.weekday);
           const day = next ?? d;
+          const origFocus = getWorkoutFocus(d, lang);
           const isToday = d.weekday === today;
           const canCheck = isToday && !next;
           const allDone = day.exercises.length > 0 && day.exercises.every((e) => doneIds.has(e.id));
@@ -57,20 +58,21 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
               id={`wo-cell-${d.weekday}`}
               className={`wk-cell wo-cell ${hl(d.weekday)} ${day.exercises.length === 0 ? 'is-rest' : ''} ${next ? 'is-preview' : ''}`}
               onClick={() => !next && onEditDay(d.weekday)}
-              title={next ? (lang === 'en' ? `Original: ${d.focus} (${dayBurn(d)} kcal)` : `原：${d.focus}（${dayBurn(d)} kcal）`) : (lang === 'en' ? 'Click to edit day' : '点击编辑当天')}
+              title={next ? (lang === 'en' ? `Original: ${origFocus} (${dayBurn(d)} kcal)` : `原：${origFocus}（${dayBurn(d)} kcal）`) : (lang === 'en' ? 'Click to edit day' : '点击编辑当天')}
             >
               {next && <span className="preview-flag">{lang === 'en' ? 'Pending' : '待应用'}</span>}
-              {next && <div className="wk-old">{d.focus}</div>}
+              {next && <div className="wk-old">{origFocus}</div>}
               {day.exercises.length === 0 && <div className="wo-rest">{lang === 'en' ? '😴 Rest Day' : '😴 好好休息'}</div>}
               {day.exercises.map((ex) => {
                 const done = canCheck && doneIds.has(ex.id);
                 const busy = busyId === ex.id;
+                const exText = getExerciseText(ex, lang);
                 return (
                   <div key={ex.id} className={`wo-ex ${done ? 'done' : ''} ${busy ? 'busy' : ''}`}>
                     {canCheck && (
                       <button
                         className="wo-check"
-                        aria-label={`${done ? (lang === 'en' ? 'Uncheck' : '取消完成') : (lang === 'en' ? 'Complete' : '完成')} ${ex.name}`}
+                        aria-label={`${done ? (lang === 'en' ? 'Uncheck' : '取消完成') : (lang === 'en' ? 'Complete' : '完成')} ${exText.name}`}
                         aria-pressed={done}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -81,15 +83,15 @@ export default function WorkoutTable({ plan, today, doneIds, burnedToday, orphan
                       </button>
                     )}
                     <div className="wo-ex-body">
-                      <div className="wo-ex-name">{ex.name}</div>
-                      {ex.detail && <div className="wo-ex-detail">{ex.detail}</div>}
+                      <div className="wo-ex-name">{exText.name}</div>
+                      {exText.detail && <div className="wo-ex-detail">{exText.detail}</div>}
                       <span className="tag tag-burn num">🔥 {ex.kcal} kcal</span>
                     </div>
                     {aiReady && !next && (
                       <button
                         className="wo-swap"
                         title={lang === 'en' ? 'Swap' : '换一个'}
-                        aria-label={lang === 'en' ? `Swap ${ex.name}` : `换掉 ${ex.name}`}
+                        aria-label={lang === 'en' ? `Swap ${exText.name}` : `换掉 ${exText.name}`}
                         disabled={busy}
                         onClick={(e) => {
                           e.stopPropagation();

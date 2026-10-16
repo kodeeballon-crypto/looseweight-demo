@@ -4,8 +4,12 @@ import { WEEKDAY_LABELS } from '../types';
 import { bmiLevel, calcBmi, round1 } from '../domain/calc';
 import { prefsText } from '../domain/workout';
 import { CHAT_HISTORY_MAX } from './prompts';
+import { getLang } from '../i18n';
+import type { Lang } from '../i18n/types';
 
 const SEX_LABEL = { male: '男', female: '女' } as const;
+
+const EN_WORKOUT_RULE = `\n\n【Output Language Requirement】\nOutput language: English.\nAll user-facing text fields ("focus", "name", "detail", "tips", "reply", "memoryAdd") MUST be written in natural, concise English (for rest days, set "focus" to "Rest" or "Rest · Stretch"). Output strictly valid JSON only.`;
 
 const COACH_SYSTEM = `你是一名持证健身教练，擅长为减脂人群设计安全、循序渐进、可在家/健身房/户外完成的训练计划。
 你只输出一个合法的 JSON 对象，不要输出任何解释文字、不要使用 markdown 代码块。`;
@@ -28,7 +32,13 @@ function personText(profile: Profile, weightKg: number): string {
 
 // ---------- 生成训练周表 ----------
 
-export function workoutPlanMessages(profile: Profile, weightKg: number, prefs: TrainingPrefs, memory: string[] = []): ChatMessage[] {
+export function workoutPlanMessages(
+  profile: Profile,
+  weightKg: number,
+  prefs: TrainingPrefs,
+  memory: string[] = [],
+  lang: Lang = getLang(),
+): ChatMessage[] {
   const memoryBlock = memory.length ? `\n【长期要求】（必须遵守）\n${memory.map((s) => `- ${s}`).join('\n')}\n` : '';
   const user = `请为我制定一周（周一到周日）的减脂训练计划。
 
@@ -45,7 +55,7 @@ ${memoryBlock}
 7. days 数组必须正好 7 项，weekday 依次为 1–7（周一=1）。
 
 【输出 JSON 结构示例（只示意 2 天，你需要输出完整 7 天）】
-${PLAN_EXAMPLE}`;
+${PLAN_EXAMPLE}${lang === 'en' ? EN_WORKOUT_RULE : ''}`;
 
   return [
     { role: 'system', content: COACH_SYSTEM },
@@ -55,7 +65,13 @@ ${PLAN_EXAMPLE}`;
 
 // ---------- 换一个动作 ----------
 
-export function replaceExerciseMessages(profile: Profile, prefs: TrainingPrefs, day: WorkoutDay, ex: Exercise): ChatMessage[] {
+export function replaceExerciseMessages(
+  profile: Profile,
+  prefs: TrainingPrefs,
+  day: WorkoutDay,
+  ex: Exercise,
+  lang: Lang = getLang(),
+): ChatMessage[] {
   const min = Math.max(10, Math.round(ex.kcal * 0.8));
   const max = Math.round(ex.kcal * 1.2);
   const others = day.exercises
@@ -77,7 +93,7 @@ ${others || '- 无'}
 3. 适合训练条件里的场地与基础，避开伤病/限制。
 4. detail 写清组数×次数或时长，并附一句动作要点。
 
-只输出 JSON：{ "name": "动作名", "detail": "组数/时长与要点", "kcal": 整数 }`;
+只输出 JSON：{ "name": "动作名", "detail": "组数/时长与要点", "kcal": 整数 }${lang === 'en' ? EN_WORKOUT_RULE : ''}`;
 
   return [
     { role: 'system', content: COACH_SYSTEM },
@@ -111,7 +127,10 @@ export interface WorkoutAdjustInput {
 const ADJUST_SYSTEM = `${COACH_SYSTEM}
 你同时是用户的私人教练：会根据用户反馈（时间、器械、身体感受、伤病）对现有训练周表做最小必要的修改，也会耐心回答动作要领、训练安排、酸痛恢复等问题。`;
 
-export function adjustWorkoutMessages({ profile, weightKg, prefs, plan, memory, history, userText }: WorkoutAdjustInput): ChatMessage[] {
+export function adjustWorkoutMessages(
+  { profile, weightKg, prefs, plan, memory, history, userText }: WorkoutAdjustInput,
+  lang: Lang = getLang(),
+): ChatMessage[] {
   const ctx = `【个人信息】${personText(profile, weightKg)}
 【训练条件】${prefsText(prefs)}
 【长期要求】${memory.length ? memory.join('；') : '暂无'}
@@ -130,7 +149,7 @@ ${userText}
 5. 不做医疗诊断；提到疼痛或伤病时提醒必要时就医，并给出更安全的替代动作。
 6. weekday 为 1–7（周一=1）。
 
-只输出 JSON：{ "reply": "说明或指导", "changes": [{ "weekday": 3, "focus": "重点", "exercises": [{ "name": "动作", "detail": "组数/时长与要点", "kcal": 整数 }] }], "memoryAdd": [], "memoryRemove": [] }`;
+只输出 JSON：{ "reply": "说明或指导", "changes": [{ "weekday": 3, "focus": "重点", "exercises": [{ "name": "动作", "detail": "组数/时长与要点", "kcal": 整数 }] }], "memoryAdd": [], "memoryRemove": [] }${lang === 'en' ? EN_WORKOUT_RULE : ''}`;
 
   return [
     { role: 'system', content: ADJUST_SYSTEM },

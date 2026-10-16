@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { DailyRecord, MealKey, WeekPlan } from '../types';
-import { MEAL_EMOJI, MEAL_KEYS, getMealLabel } from '../types';
+import { MEAL_EMOJI, MEAL_KEYS, getMealLabel, getMealText } from '../types';
 import { intakeOf, weekdayOf } from '../domain/calc';
 import { useT } from '../i18n';
 import type { Lang } from '../i18n/types';
+import { useTranslateStatus } from '../services/aiTranslate';
 
-export type CheckInValues = Omit<DailyRecord, 'encouragement'>;
+export type CheckInValues = Omit<DailyRecord, 'encouragement' | 'encouragementEn'>;
 
 interface Props {
   date: string;
@@ -29,6 +30,7 @@ export function validateWeight(s: string, lang: Lang = 'zh'): string | null {
 
 export default function CheckInForm({ date, initial, plan, submitLabel, busy, idPrefix = 'checkin', onSubmit }: Props) {
   const { lang } = useT();
+  const translatingMeals = useTranslateStatus((s) => s.meals);
   const [weight, setWeight] = useState(initial ? String(initial.weightKg) : '');
   const [meals, setMeals] = useState<MealKey[]>(initial?.mealsEaten ?? []);
   const [extra, setExtra] = useState(initial?.extraKcal ? String(initial.extraKcal) : '');
@@ -79,13 +81,22 @@ export default function CheckInForm({ date, initial, plan, submitLabel, busy, id
 
       <div className="field">
         <div className="row-between">
-          <span className="field-label">{lang === 'en' ? 'Which planned meals did you eat?' : '按计划吃了哪几顿？'}</span>
+          <span className="field-label">
+            {lang === 'en' ? 'Which planned meals did you eat?' : '按计划吃了哪几顿？'}
+            {lang === 'en' && translatingMeals && (
+              <span className="muted" style={{ fontSize: 12, marginLeft: 8 }}>
+                <span className="spinner" style={{ width: 11, height: 11, verticalAlign: 'middle', marginRight: 4 }} />
+                AI translating…
+              </span>
+            )}
+          </span>
           <span className="tag tag-kcal num">{lang === 'en' ? `Total ${intake} kcal` : `合计 ${intake} kcal`}</span>
         </div>
         {day ? (
           <div className="meal-checks">
             {MEAL_KEYS.map((k) => {
               const on = meals.includes(k);
+              const mealText = getMealText(day.meals[k], lang);
               return (
                 <button
                   type="button"
@@ -101,7 +112,7 @@ export default function CheckInForm({ date, initial, plan, submitLabel, busy, id
                       {MEAL_EMOJI[k]} {getMealLabel(k, lang)}
                     </span>
                     <span className="mc-name" style={{ display: 'block' }}>
-                      {day.meals[k].name}
+                      {mealText.name}
                     </span>
                   </span>
                   <span className="mc-kcal num">{day.meals[k].kcal}</span>

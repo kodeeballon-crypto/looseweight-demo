@@ -1,75 +1,95 @@
-# 轻盈 · 减重记录（looseweight-demo）
+# Lighten · Weight Loss Tracker (`looseweight-demo`)
 
-个人自用的减重 Web 应用：每日体重打卡 → 趋势图表与统计 → AI 一周减脂饮食周表 + 训练周表 → 打卡后自动算热量（摄入 − 训练消耗）并送上鼓励。
-数据只保存在本机浏览器（localStorage，key：`looseweight-v1`）。
+A personal weight-loss web application: **Daily Weight Check-in → Trend Charts & Stats → AI Weekly Fat-Loss Meal Plan + Workout Plan → Automatic Calorie Calculation (Intake − Burned) & AI Encouragement**.
+All data is stored locally in your browser (`localStorage`, key: `looseweight-v1`). Supports seamless **Chinese / English (`中文` / `EN`)** switching with DeepSeek AI translation for generated plans and encouragement.
 
-## 效果展示
+## Preview
 
-**今日** · 体重打卡、热量圆环（外圈净摄入 / 内圈红色训练消耗）、今日完成情况
+**Today** · Daily weight check-in, calorie ring (outer net intake / inner red workout burn), AI encouragement, and daily completion progress
 
-![今日](docs/screenshots/dashboard.png)
+![Today](docs/screenshots/dashboard.png)
 
-**AI 饮食周表** · 7 天 × 4 餐，右侧 AI 营养师对话调整食谱
+**AI Meal Plan** · 7 days × 4 meals, with an AI Dietitian chat panel on the right to adjust your plan
 
-![饮食周表](docs/screenshots/meal-plan.png)
+![AI Meal Plan](docs/screenshots/meal-plan.png)
 
-**今日营养结构** · 三大营养素热量占比饼图、偏低/合适/偏高评级、AI 点评与建议
+**Today's Nutrition Breakdown** · Macronutrient calorie ratio pie chart, Low / Optimal / High ratings, AI dietitian comments & suggestions
 
-![今日营养结构](docs/screenshots/nutrition.png)
+![Today's Nutrition Breakdown](docs/screenshots/nutrition.png)
 
-**AI 训练周表** · 勾选今日动作，消耗同步首页；右侧 AI 教练按天调整计划
+**AI Workout Plan** · Check off today's completed exercises to sync burned calories to the dashboard; AI Coach chat on the right adjusts workouts by day
 
-![训练周表](docs/screenshots/workout.png)
+![AI Workout Plan](docs/screenshots/workout.png)
 
-**个人档案** · 生活节奏决定食谱难度，自动计算 BMI / BMR / TDEE / 每日热量目标
+**Personal Profile** · Daily routine determines recipe complexity, automatically calculating BMI / BMR / TDEE / Daily Calorie Target
 
-![个人档案](docs/screenshots/settings.png)
+![Personal Profile](docs/screenshots/settings.png)
 
-## 启动
+## Quick Start
 
 ```powershell
-npm install      # 首次
-npm run dev      # 打开 http://localhost:5173
+npm install      # First-time setup
+npm run dev      # Open http://localhost:5173
 ```
 
-其他命令：`npm test`（Vitest 单测）、`npm run build`（类型检查 + 打包）、`npm run preview`（预览打包结果，同样带 AI 代理）。
+Other scripts:
+- `npm test` — Run Vitest unit tests
+- `npm run build` — TypeScript check + production build
+- `npm run preview` — Preview the production build (includes the local AI proxy)
 
-## 配置 AI
+## Configure AI
 
-1. 进入「设置 → AI 配置」，点击预设（DeepSeek / 通义千问 / Kimi / OpenAI）自动填好 Base URL 和模型名，也可以手动填任何 OpenAI 兼容接口。
-2. 填入 API Key（只存在本机，导出备份时不包含）。
-3. 点「测试连接」，提示成功即可。
+1. Go to **Settings → AI Configuration**, click a preset (**DeepSeek / Qwen / Kimi / OpenAI**) to auto-fill the Base URL and model name, or enter any OpenAI-compatible endpoint manually.
+2. Enter your **API Key** (stored locally on your device only; excluded when exporting backups).
+3. Click **Test Connection** and verify the connection succeeds.
 
-| 服务 | Base URL | 默认模型 |
+| Provider | Base URL | Default Model |
 |---|---|---|
-| DeepSeek | https://api.deepseek.com | deepseek-flash |
-| 通义千问 | https://dashscope.aliyuncs.com/compatible-mode/v1 | qwen-plus |
-| Kimi | https://api.moonshot.cn/v1 | moonshot-v1-8k |
-| OpenAI | https://api.openai.com/v1 | gpt-4o-mini |
+| DeepSeek | `https://api.deepseek.com` | `deepseek-flash` |
+| Qwen (DashScope) | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
+| Kimi (Moonshot) | `https://api.moonshot.cn/v1` | `moonshot-v1-8k` |
+| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
 
-**跨域说明：** 默认请求发往本地 `/ai-proxy/*`，由 Vite 中间件按请求头 `x-target-base` 转发到真实地址（见 `vite.config.ts`），所以必须通过 `npm run dev` / `npm run preview` 访问。“直连模式”只适用于本身支持 CORS 的服务。
+**CORS Proxy Note:** By default, requests are sent to local `/ai-proxy/*` and forwarded by the Vite middleware to the target base URL specified in the `x-target-base` header (see [`vite.config.ts`](vite.config.ts)). Therefore, please access the app via `npm run dev` or `npm run preview`. Enable **Direct Mode** only if your API endpoint natively supports browser CORS.
 
-未配置 AI 时，打卡鼓励使用内置语料，饮食周表 / 训练周表页会提示先去配置。
+When AI is not configured, check-in encouragement uses built-in offline templates, and the Meal Plan / Workout Plan pages will prompt you to configure AI first.
 
-## 使用流程
+## Workflow
 
-1. 首次打开 → 填写个人档案（身高、体重、目标、年龄、活动量、饮食偏好）→ 自动算出 BMI / BMR / TDEE / 每日热量目标。
-2. 「饮食周表」→ 生成我的一周食谱（7 天 × 4 餐，今天这一列高亮）；点格子手动编辑，悬停点「🔄 换一个」只替换这一餐。周表下方「🥧 今日营养结构」点「分析今日饮食」，AI 估算三大营养素，显示热量占比饼图、偏低/合适/偏高评级和改进建议（已打卡按已吃的餐，未打卡按计划预览）。
-3. 「训练周表」→ 首次先填训练条件（场地、单次时长、每周天数、水平、身体限制）→ 生成一周训练（今天这一列红色高亮）；点格子手动编辑。完成后勾选今天的动作，或点「一键完成今日训练」，消耗热量会同步到「今日」的红色圆环、今日进度卡片，以及「统计」的红色柱。右侧 AI 教练可以答疑，也可以按天调整计划。
-4. 「今日」→ 输入体重、勾选按计划吃了哪几顿、填计划外摄入 → 打卡。自动计算热量、生成鼓励、解锁徽章。是否达标按净摄入判断（摄入 − 训练消耗）。
-5. 「统计」→ 体重趋势（7 日均线 + 目标线）、热量图（摄入柱 + 红色消耗柱 + 净摄入线）、预计达成日期、历史记录编辑/删除。
-6. 「设置」→ 徽章墙、导出 / 导入 JSON 备份（含训练数据）、清空数据。
+1. **First Launch** → Fill out your **Personal Profile** (height, starting weight, target weight, age, activity level, dietary preferences) → Automatically calculates BMI, BMR, TDEE, and your Daily Calorie Target.
+2. **Meal Plan** → Click **Generate Weekly Plan** (7 days × 4 meals, with today's column highlighted). Click any cell to edit manually, or click **🔄 Swap** on hover to replace a single meal. Below the table, click **Analyze Today** in **🥧 Today's Nutrition Breakdown** to let AI estimate protein, carbs, and fat grams, render a calorie-share pie chart, rate each macro (Low / Optimal / High), and provide actionable suggestions.
+3. **Workout Plan** → Set your **Workout Preferences** (location, duration per session, days per week, fitness level, physical limitations) → Generate a 7-day workout plan (today's column highlighted in red). Check off completed exercises or click **🔥 Complete All Today** to sync burned calories to the Today calorie ring, Today's Completion card, and Stats chart. Use the **AI Coach** chat on the right to ask form questions or adjust workouts day by day.
+4. **Today** → Enter today's weight, check which planned meals you ate, and log any extra calories → Click **Check In 💪**. Automatically computes net calories (`Intake − Burned`), generates a personalized encouragement message, and unlocks milestone badges. Use the **中文 / EN** switch in the top-right corner of the Today page to switch languages at any time.
+5. **Stats** → View weight trend (with 7-day moving average & target line), calorie chart (intake bars + red burned bars + net intake line), estimated goal date, and edit/delete historical check-in records.
+6. **Settings** → View the badge wall, export / import JSON backups (including workout logs and AI memory), or clear all local data.
 
-## 目录
+## Data Integrity
+
+- **Meal snapshots** — each check-in stores a snapshot (name, portions, kcal) of the meals you ticked, just like completed workouts. Editing, swapping, or regenerating the meal plan later never changes historical intake or the on-track rate.
+- **Migration caveat** — records created before snapshots existed (storage v4 and older, or older backups) are frozen once using the meal plan saved at upgrade/import time. Meals that had already been overwritten before that cannot be recovered.
+- **Backup import** — imported files are validated *and* normalized before replacing local data: numeric strings such as `"400"` become numbers, real calendar dates, value ranges (see [`src/config/limits.ts`](src/config/limits.ts)), activity levels, unique dates/weekdays, and settings types are checked. English encouragement and meal snapshots survive an export → import round trip; the API key is never exported.
+- **AI translation** — translated text is written back only if the Chinese source still matches what was sent; responses that arrive after the plan was edited, regenerated, cleared, or replaced by an import are discarded. Failed translations are retried the next time the data or language changes.
+
+## Project Structure
 
 ```
 src/
-  domain/    纯计算：calc（BMI/BMR/TDEE/统计/预测）、badges（连续打卡/徽章）、encourage（离线鼓励语）、workout（训练消耗/完成状态/净摄入）、nutrition（营养占比/评级）
-  ai/        client（OpenAI 兼容调用 + 错误归一化）、prompts（三套提示词）、parse（JSON 提取与校验）、workoutPrompts / parseWorkout（训练教练提示词与解析）、nutritionPrompts / parseNutrition（营养分析）
-  store/     useStore（Zustand + persist）、toast、dataio（导入校验）
-  services/  encourage（AI 鼓励 + 离线兜底）
-  hooks/     useWide（宽屏判断）
-  components/ pages/ styles/
+  config/      limits (shared input ranges for forms and backup import),
+               ai (provider presets, default settings, per-scenario timeouts & temperatures)
+  domain/      Pure domain logic: calc (BMI/BMR/TDEE/stats/projection), records (check-in meal snapshots),
+               badges (streaks & milestones), encourage (offline templates), workout (burn/completion/net intake),
+               nutrition (macro shares & ratings)
+  ai/          client (OpenAI-compatible caller + error normalization), prompts (meal & encourage prompts),
+               parse (JSON extraction & validation), workoutPrompts / parseWorkout, nutritionPrompts / parseNutrition
+  i18n/        Bilingual dictionary (zh / en), reactive language store, interpolation helpers,
+               LocalizedError (error codes translated at throw time: AI, parse, backup import)
+  store/       useStore (Zustand + localStorage persistence), toast, dataio (backup export + import validation/normalization)
+  services/    encourage (AI encouragement + offline fallback), aiTranslate (DeepSeek Zh→En sync),
+               translateMerge (stale-safe merging of translation results)
+  hooks/       useWide (responsive breakpoint hook)
+  components/  pages/ (lazy-loaded per route)  styles/
 ```
 
-> AI 饮食与训练建议仅供参考，如有慢性疾病、伤病或其他身体不适，请咨询医生、注册营养师或专业教练。
+Charts use on-demand ECharts imports (line / bar / pie + the components actually used), and pages are code-split with `React.lazy`.
+
+> ⚕️ AI diet and workout suggestions are for reference only. If you have chronic conditions, injuries, or physical discomfort, please consult a physician, registered dietitian, or certified fitness coach.

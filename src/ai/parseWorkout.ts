@@ -1,6 +1,7 @@
 import type { Exercise, WorkoutAdjustment, WorkoutChange, WorkoutDay, WorkoutPlan, Weekday } from '../types';
 import { ParseError, extractJson, toStrList, toWeekday } from './parse';
 import { exerciseId, isRestDay } from '../domain/workout';
+import { getT } from '../i18n';
 
 export const EX_KCAL_MIN = 10;
 export const EX_KCAL_MAX = 800;
@@ -26,12 +27,13 @@ export function normalizeExercise(raw: unknown, id: string = exerciseId()): Exer
 function normalizeDay(raw: unknown, weekday: Weekday): WorkoutDay | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
-  const focus = typeof o.focus === 'string' && o.focus.trim() ? o.focus.trim() : '训练';
+  const focus = typeof o.focus === 'string' && o.focus.trim() ? o.focus.trim() : getT()('workoutDefaults.focus');
   const exercises = (Array.isArray(o.exercises) ? o.exercises : [])
     .map((e) => normalizeExercise(e))
     .filter((e): e is Exercise => !!e)
     .slice(0, EX_PER_DAY_MAX);
   const day: WorkoutDay = { weekday, focus, exercises };
+  if (typeof o.rest === 'boolean') day.rest = o.rest;
   if (!isRestDay(day) && exercises.length === 0) return null;
   return day;
 }

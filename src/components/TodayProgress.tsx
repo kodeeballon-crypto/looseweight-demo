@@ -25,7 +25,7 @@ export default function TodayProgress({ mealsEaten, workout, doneCount, burned }
   return (
     <section className="card" id="today-progress" style={{ animationDelay: '300ms' }}>
       <div className="card-title">
-        <h2>{lang === 'en' ? '✅ Today’s Completion' : '✅ 今日完成情况'}</h2>
+        <h2>{lang === 'en' ? "✅ Today's Completion" : '✅ 今日完成情况'}</h2>
         {burned > 0 && <span className="tag tag-burn num">🔥 {lang === 'en' ? `Burned ${burned} kcal` : `已消耗 ${burned} kcal`}</span>}
       </div>
       {allDone && <div className="tp-banner">{lang === 'en' ? '🎉 All meals & workouts completed today' : '🎉 今日饮食与训练全部完成'}</div>}

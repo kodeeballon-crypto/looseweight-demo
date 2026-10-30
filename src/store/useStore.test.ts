@@ -85,3 +85,50 @@ describe('useStore 持久化', () => {
     expect(s2.getState().nutritionCache).toEqual({});
   });
 });
+
+const meal = (name: string, kcal: number) => ({ name, items: `${name}份量`, kcal });
+const planOf = (breakfastKcal: number, name: string) => ({
+  createdAt: `p-${breakfastKcal}`,
+  dailyKcalTarget: 1800,
+  days: [1, 2, 3, 4, 5, 6, 7].map((w) => ({
+    weekday: w,
+    meals: { breakfast: meal(name, breakfastKcal), lunch: meal('午饭', 600), dinner: meal('晚饭', 500), snack: meal('加餐', 100) },
+  })),
+});
+
+describe('useStore 打卡快照', () => {
+  beforeEach(() => mem.clear());
+
+  it('打卡时冻结餐食，换计划后历史热量不变', async () => {
+    const { intakeOf } = await import('../domain/calc');
+    const s = await loadStore();
+    s.getState().setPlan(planOf(400, '鸡蛋') as never);
+    s.getState().upsertRecord({ date: '2026-10-12', weightKg: 80, mealsEaten: ['breakfast'] });
+    s.getState().setPlan(planOf(900, '面条') as never);
+    const r = s.getState().records[0];
+    expect(r.mealSnapshot?.breakfast?.name).toBe('鸡蛋');
+    expect(intakeOf(r, s.getState().plan).kcal).toBe(400);
+  });
+
+  it('编辑记录（只改体重）保留快照与中英文鼓励语', async () => {
+    const s = await loadStore();
+    s.getState().setPlan(planOf(400, '鸡蛋') as never);
+    s.getState().upsertRecord({ date: '2026-10-12', weightKg: 80, mealsEaten: ['breakfast'], encouragement: '加油', encouragementEn: 'Go!' });
+    s.getState().setPlan(planOf(900, '面条') as never);
+    s.getState().upsertRecord({ date: '2026-10-12', weightKg: 79.5, mealsEaten: ['breakfast'] });
+    const r = s.getState().records[0];
+    expect(r.weightKg).toBe(79.5);
+    expect(r.mealSnapshot?.breakfast?.kcal).toBe(400);
+    expect(r.encouragement).toBe('加油');
+    expect(r.encouragementEn).toBe('Go!');
+  });
+
+  it('v4 旧记录迁移时用已保存的计划冻结一次', async () => {
+    mem.set(
+      'looseweight-v1',
+      JSON.stringify({ state: { records: [{ date: '2026-10-12', weightKg: 80, mealsEaten: ['breakfast'] }], plan: planOf(400, '鸡蛋') }, version: 4 }),
+    );
+    const s = await loadStore();
+    expect(s.getState().records[0].mealSnapshot?.breakfast?.kcal).toBe(400);
+  });
+});

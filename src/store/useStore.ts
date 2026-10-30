@@ -23,17 +23,15 @@ import { sortRecords } from '../domain/calc';
 import { applyMealChanges, mergeMemory, trimChat } from '../domain/planChat';
 import { applyWorkoutChanges as mergeWorkoutChanges, completeAll, toggleDone } from '../domain/workout';
 import { pruneCache } from '../domain/nutrition';
+import { freezeRecord, freezeRecords } from '../domain/records';
 import { toast } from './toast';
 import type { ExportData } from './dataio';
+import { DEFAULT_SETTINGS } from '../config/ai';
+import { getT } from '../i18n';
 
 export const STORAGE_KEY = 'looseweight-v1';
 
-export const DEFAULT_SETTINGS: Settings = {
-  baseUrl: 'https://api.deepseek.com',
-  apiKey: '',
-  model: 'deepseek-flash',
-  directMode: false,
-};
+export { DEFAULT_SETTINGS };
 
 interface State {
   profile: Profile | null;
@@ -106,7 +104,7 @@ const safeStorage: StateStorage = {
     } catch {
       if (!warned) {
         warned = true;
-        toast('本地存储空间已满或不可用，数据可能无法保存，建议到设置页导出备份', 'error');
+        toast(getT()('toast.storageFull'), 'error');
       }
     }
   },
@@ -139,8 +137,16 @@ export const useStore = create<State>()(
       setProfile: (profile) => set({ profile }),
 
       upsertRecord: (r) => {
+        const prev = get().records.find((x) => x.date === r.date);
         const others = get().records.filter((x) => x.date !== r.date);
-        set({ records: sortRecords([...others, r]) });
+        // 保留鼓励语等元数据；已吃餐次沿用已有快照，新勾选的餐从当前计划冻结
+        const merged: DailyRecord = {
+          ...r,
+          encouragement: r.encouragement ?? prev?.encouragement,
+          encouragementEn: r.encouragementEn ?? prev?.encouragementEn,
+          mealSnapshot: r.mealSnapshot ?? prev?.mealSnapshot,
+        };
+        set({ records: sortRecords([...others, freezeRecord(merged, get().plan)]) });
       },
 
       deleteRecord: (date) => set({ records: get().records.filter((r) => r.date !== date) }),
@@ -191,7 +197,7 @@ export const useStore = create<State>()(
       importData: (d) =>
         set({
           profile: d.profile,
-          records: sortRecords(d.records),
+          records: freezeRecords(sortRecords(d.records), d.plan),
           plan: d.plan,
           seenBadges: d.seenBadges,
           planMemory: d.planMemory ?? [],
@@ -266,14 +272,22 @@ export const useStore = create<State>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => safeStorage),
-      migrate: (persisted) => {
+      migrate: (persisted, version) => {
         const s = (persisted ?? {}) as Record<string, unknown>;
         const arr = (v: unknown) => (Array.isArray(v) ? v : []);
         const obj = (v: unknown) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+        // v5：旧记录没有餐食快照，用当前保存的周计划冻结一次（更早被覆盖的食谱已无法还原）
+        const records = arr(s.records) as DailyRecord[];
+        const plan = (s.plan ?? null) as WeekPlan | null;
+        const frozen =
+          version < 5
+            ? records.map((r) => (r && typeof r === 'object' && typeof r.date === 'string' && Array.isArray(r.mealsEaten) ? freezeRecord(r, plan) : r))
+            : records;
         return {
           ...s,
+          records: frozen,
           planMemory: arr(s.planMemory),
           planChat: arr(s.planChat),
           trainingPrefs: s.trainingPrefs ?? null,

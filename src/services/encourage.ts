@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { AI_TEMPERATURE, AI_TIMEOUT } from '../config/ai';
 import { chat, isAiConfigured } from '../ai/client';
 import { encouragementMessages } from '../ai/prompts';
 import { parseEncouragement } from '../ai/parse';
@@ -57,7 +58,7 @@ export async function generateEncouragement({ profile, records, plan, settings, 
     const raw = await chat(
       settings,
       encouragementMessages(profile, { recent, delta, avgTrend, kcal, streak, totalLoss, targetWeight: profile.targetWeightKg }, lang),
-      { timeoutMs: 20000, json: true, temperature: 0.9 },
+      { timeoutMs: AI_TIMEOUT.encourage, json: true, temperature: AI_TEMPERATURE.encourage },
     );
     return { text: parseEncouragement(raw), source: 'ai' };
   } catch (e) {

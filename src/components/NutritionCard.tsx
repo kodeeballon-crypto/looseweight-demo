@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AI_TIMEOUT } from '../config/ai';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { toast } from '../store/toast';
@@ -45,7 +46,7 @@ export default function NutritionCard() {
     setBusy(true);
     try {
       const target = energyInfo(profile, records).target;
-      const raw = await chat(settings, nutritionMessages(profile, target, keys, meals), { timeoutMs: 30000, json: true });
+      const raw = await chat(settings, nutritionMessages(profile, target, keys, meals), { timeoutMs: AI_TIMEOUT.nutrition, json: true });
       const r = parseNutrition(raw, keys);
       setNutrition({ date, signature, ...r, at: new Date().toISOString() });
       toast(lang === 'en' ? "Today's nutrition structure analyzed 🥧" : '今日营养结构已分析 🥧', 'success');

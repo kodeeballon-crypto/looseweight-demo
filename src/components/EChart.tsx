@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'react';
-import * as echarts from 'echarts';
+// 按需引入：只注册本项目用到的图表与组件，避免全量打包 ECharts
+import * as echarts from 'echarts/core';
+import { BarChart, LineChart, PieChart } from 'echarts/charts';
+import { GraphicComponent, GridComponent, LegendComponent, MarkLineComponent, TitleComponent, TooltipComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsOption } from 'echarts';
+
+echarts.use([LineChart, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, TitleComponent, GraphicComponent, CanvasRenderer]);
 
 interface Props {
   option: EChartsOption;

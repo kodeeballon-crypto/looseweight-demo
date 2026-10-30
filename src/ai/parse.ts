@@ -1,9 +1,10 @@
 import type { Meal, MealChange, MealKey, PlanAdjustment, WeekPlan, DayPlan, Weekday } from '../types';
 import { MEAL_KEYS } from '../types';
+import { LocalizedError } from '../i18n/errors';
 
-export class ParseError extends Error {
-  constructor(message = 'AI 返回格式不正确，请重试') {
-    super(message);
+export class ParseError extends LocalizedError {
+  constructor() {
+    super('aiError.parse');
     this.name = 'ParseError';
   }
 }

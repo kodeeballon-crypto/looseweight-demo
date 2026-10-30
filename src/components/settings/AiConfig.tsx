@@ -1,19 +1,13 @@
 import { useState } from 'react';
+import { AI_PRESETS, AI_TIMEOUT, DEFAULT_PRESET } from '../../config/ai';
 import { useStore } from '../../store/useStore';
 import { toast } from '../../store/toast';
 import { chat, errorMessage, isAiConfigured } from '../../ai/client';
 import { PING_MESSAGES } from '../../ai/prompts';
 import { useT } from '../../i18n';
 
-const PRESETS = [
-  { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', model: 'deepseek-flash' },
-  { name: '通义千问', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
-  { name: 'Kimi', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
-  { name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
-];
-
 export default function AiConfig() {
-  const { lang } = useT();
+  const { t, lang } = useT();
   const settings = useStore((s) => s.settings);
   const setSettings = useStore((s) => s.setSettings);
   const [showKey, setShowKey] = useState(false);
@@ -22,7 +16,7 @@ export default function AiConfig() {
   const test = async () => {
     setTesting(true);
     try {
-      const reply = await chat(settings, PING_MESSAGES, { timeoutMs: 20000 });
+      const reply = await chat(settings, PING_MESSAGES, { timeoutMs: AI_TIMEOUT.ping });
       toast(lang === 'en' ? `Connected successfully 🎉 Model response: ${reply.slice(0, 30)}` : `连接成功 🎉 模型回复：${reply.slice(0, 30)}`, 'success');
     } catch (e) {
       toast(errorMessage(e), 'error');
@@ -36,15 +30,15 @@ export default function AiConfig() {
       <div className="field">
         <span className="field-label">{lang === 'en' ? 'Quick Presets (fills Base URL & Model)' : '快捷预设（只填 Base URL 和模型名）'}</span>
         <div className="preset-row">
-          {PRESETS.map((p) => (
+          {AI_PRESETS.map((p) => (
             <button
-              key={p.name}
-              id={`ai-preset-${p.name}`}
+              key={p.id}
+              id={`ai-preset-${p.id}`}
               type="button"
               className={`btn btn-sm ${settings.baseUrl === p.baseUrl ? 'btn-violet' : ''}`}
               onClick={() => setSettings({ baseUrl: p.baseUrl, model: p.model })}
             >
-              {p.name}
+              {t(`aiPreset.${p.id}`)}
             </button>
           ))}
         </div>
@@ -56,7 +50,7 @@ export default function AiConfig() {
           <input
             id="ai-baseUrl"
             className="input"
-            placeholder="https://api.deepseek.com"
+            placeholder={DEFAULT_PRESET.baseUrl}
             value={settings.baseUrl}
             onChange={(e) => setSettings({ baseUrl: e.target.value })}
           />
@@ -66,7 +60,7 @@ export default function AiConfig() {
           <input
             id="ai-model"
             className="input"
-            placeholder="deepseek-flash"
+            placeholder={DEFAULT_PRESET.model}
             value={settings.model}
             onChange={(e) => setSettings({ model: e.target.value })}
           />

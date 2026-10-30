@@ -1,16 +1,20 @@
 import type { Settings } from '../types';
+import { AI_TEMPERATURE } from '../config/ai';
+import { getT } from '../i18n';
+import { LocalizedError } from '../i18n/errors';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-export class AiError extends Error {
+export class AiError extends LocalizedError {
   constructor(
-    message: string,
+    code: string,
+    params?: Record<string, string | number>,
     public status?: number,
   ) {
-    super(message);
+    super(code, params);
     this.name = 'AiError';
   }
 }
@@ -20,13 +24,13 @@ export function isAiConfigured(s: Settings): boolean {
 }
 
 function normalizeStatus(status: number, detail: string): AiError {
-  const suffix = detail ? `（${detail.slice(0, 120)}）` : '';
-  if (status === 401 || status === 403) return new AiError('API Key 无效或没有权限，请检查设置', status);
-  if (status === 404) return new AiError(`接口地址或模型名不正确${suffix}`, status);
-  if (status === 429) return new AiError('请求过于频繁或额度不足，请稍后再试', status);
-  if (status === 402) return new AiError('账户余额不足，请充值后再试', status);
-  if (status >= 500) return new AiError(`AI 服务暂时不可用（${status}）${suffix}`, status);
-  return new AiError(`请求失败（${status}）${suffix}`, status);
+  const d = detail ? getT()('aiError.detail', { text: detail.slice(0, 120) }) : '';
+  if (status === 401 || status === 403) return new AiError('aiError.unauthorized', undefined, status);
+  if (status === 404) return new AiError('aiError.notFound', { detail: d }, status);
+  if (status === 429) return new AiError('aiError.rateLimited', undefined, status);
+  if (status === 402) return new AiError('aiError.insufficientBalance', undefined, status);
+  if (status >= 500) return new AiError('aiError.serverError', { status, detail: d }, status);
+  return new AiError('aiError.requestFailed', { status, detail: d }, status);
 }
 
 async function errorDetail(res: Response): Promise<string> {
@@ -51,7 +55,7 @@ interface ChatOptions {
 
 /** 调用 OpenAI 兼容 chat/completions，返回 assistant 文本 */
 export async function chat(settings: Settings, messages: ChatMessage[], opts: ChatOptions): Promise<string> {
-  if (!isAiConfigured(settings)) throw new AiError('还没有配置 AI，请先到设置页填写');
+  if (!isAiConfigured(settings)) throw new AiError('aiError.notConfigured');
 
   const base = settings.baseUrl.trim().replace(/\/+$/, '');
   const url = settings.directMode ? `${base}/chat/completions` : '/ai-proxy/chat/completions';
@@ -65,7 +69,7 @@ export async function chat(settings: Settings, messages: ChatMessage[], opts: Ch
     const body: Record<string, unknown> = {
       model: settings.model.trim(),
       messages,
-      temperature: opts.temperature ?? 0.7,
+      temperature: opts.temperature ?? AI_TEMPERATURE.default,
     };
     if (withJsonFormat) body.response_format = { type: 'json_object' };
 
@@ -73,9 +77,11 @@ export async function chat(settings: Settings, messages: ChatMessage[], opts: Ch
     const timer = setTimeout(() => ac.abort(), opts.timeoutMs);
     try {
       return await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: ac.signal });
-    } catch (e) {
-      if (ac.signal.aborted) throw new AiError(`请求超时（${Math.round(opts.timeoutMs / 1000)} 秒），请稍后重试`);
-      throw new AiError('网络错误，无法连接 AI 服务' + (settings.directMode ? '（直连模式可能被跨域拦截，可关闭直连试试）' : ''));
+    } catch {
+      if (ac.signal.aborted) throw new AiError('aiError.timeout', { s: Math.round(opts.timeoutMs / 1000) });
+      const err = new AiError('aiError.network');
+      if (settings.directMode) err.message += getT()('aiError.networkDirectHint');
+      throw err;
     } finally {
       clearTimeout(timer);
     }
@@ -90,10 +96,10 @@ export async function chat(settings: Settings, messages: ChatMessage[], opts: Ch
   try {
     data = await res.json();
   } catch {
-    throw new AiError('AI 服务返回了无法识别的内容');
+    throw new AiError('aiError.badResponse');
   }
   const content = (data as { choices?: { message?: { content?: string } }[] })?.choices?.[0]?.message?.content;
-  if (typeof content !== 'string' || !content.trim()) throw new AiError('AI 返回内容为空，请重试');
+  if (typeof content !== 'string' || !content.trim()) throw new AiError('aiError.emptyResponse');
   return content;
 }
 

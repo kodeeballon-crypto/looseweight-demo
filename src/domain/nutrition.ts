@@ -46,7 +46,8 @@ export function todayMeals(plan: WeekPlan | null, record: DailyRecord | undefine
   if (!day) return { keys: [], meals: {}, preview };
   const keys = preview ? [...MEAL_KEYS] : MEAL_KEYS.filter((k) => record.mealsEaten.includes(k));
   const meals: Partial<Record<MealKey, Meal>> = {};
-  for (const k of keys) meals[k] = day.meals[k];
+  // 已打卡的餐按打卡时的快照分析，避免改食谱后分析对象悄悄变化
+  for (const k of keys) meals[k] = record?.mealSnapshot?.[k] ?? day.meals[k];
   return { keys, meals, preview };
 }
 

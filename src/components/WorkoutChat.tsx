@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AI_TEMPERATURE, AI_TIMEOUT } from '../config/ai';
 import { useStore } from '../store/useStore';
 import { toast } from '../store/toast';
 import type { WorkoutChange } from '../types';
@@ -80,7 +81,7 @@ export default function WorkoutChat({ variant, open, onClose, pending, onPending
       const res = await chat(
         settings,
         adjustWorkoutMessages({ profile, weightKg, prefs: trainingPrefs ?? DEFAULT_PREFS, plan: workoutPlan, memory: workoutMemory, history, userText: text }),
-        { timeoutMs: 45000, json: true, temperature: 0.6 },
+        { timeoutMs: AI_TIMEOUT.chat, json: true, temperature: AI_TEMPERATURE.chat },
       );
       const adj = parseWorkoutAdjustment(res);
       const id = uid();

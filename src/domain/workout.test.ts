@@ -106,4 +106,15 @@ describe('isRestDay', () => {
     expect(isRestDay(day(1, [], '休息·拉伸'))).toBe(true);
     expect(isRestDay(day(1, [], '下肢力量'))).toBe(false);
   });
+
+  it('英文只匹配完整单词 Rest，不误判 Restorative / Forest', () => {
+    expect(isRestDay(day(1, [], 'Rest · Stretch'))).toBe(true);
+    expect(isRestDay(day(1, [], 'Restorative Yoga'))).toBe(false);
+    expect(isRestDay(day(1, [], 'Forest Walk'))).toBe(false);
+  });
+
+  it('显式 rest 标记优先于关键词', () => {
+    expect(isRestDay({ ...day(1, [], '放松日'), rest: true })).toBe(true);
+    expect(isRestDay({ ...day(1, [], '休息后的力量训练'), rest: false })).toBe(false);
+  });
 });

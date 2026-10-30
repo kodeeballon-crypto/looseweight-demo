@@ -3,8 +3,8 @@ import type { Meal, MealKey, Profile } from '../types';
 import { MEAL_KEYS, MEAL_LABELS } from '../types';
 import { getLang } from '../i18n';
 import type { Lang } from '../i18n/types';
+import { SEX_LABEL } from './prompts';
 
-const SEX_LABEL = { male: '男', female: '女' } as const;
 
 const NUTRITIONIST_SYSTEM = `你是一名注册营养师，擅长估算家常菜的三大营养素并点评减脂期的饮食结构。
 你只输出一个合法的 JSON 对象，不要输出任何解释文字、不要使用 markdown 代码块。`;

@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { create } from 'zustand';
+import { useT } from '../i18n';
 
 interface ModalProps {
   open: boolean;
@@ -48,6 +49,7 @@ export function confirmDialog(opts: Omit<ConfirmReq, 'resolve'>): Promise<boolea
 
 export function ConfirmHost() {
   const { req, set } = useConfirmStore();
+  const { t } = useT();
   const close = (ok: boolean) => {
     req?.resolve(ok);
     set(null);
@@ -60,7 +62,7 @@ export function ConfirmHost() {
           {req.message && <p className="muted" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{req.message}</p>}
           <div className="modal-actions">
             <button id="confirm-cancel" className="btn btn-ghost" onClick={() => close(false)}>
-              取消
+              {t('dialog.cancel')}
             </button>
             <button
               id="confirm-ok"
@@ -68,7 +70,7 @@ export function ConfirmHost() {
               onClick={() => close(true)}
               autoFocus
             >
-              {req.okText ?? '确定'}
+              {req.okText ?? t('dialog.ok')}
             </button>
           </div>
         </>

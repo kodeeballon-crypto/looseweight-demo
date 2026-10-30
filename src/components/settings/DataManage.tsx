@@ -2,38 +2,19 @@ import { useRef } from 'react';
 import dayjs from 'dayjs';
 import { useStore } from '../../store/useStore';
 import { toast } from '../../store/toast';
-import { validateImport, type ExportData } from '../../store/dataio';
+import { buildExport, validateImport, type ExportData } from '../../store/dataio';
 import { confirmDialog } from '../Modal';
 import { useT } from '../../i18n';
 
 export default function DataManage() {
-  const { lang } = useT();
+  const { t, lang } = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const importData = useStore((s) => s.importData);
   const clearAll = useStore((s) => s.clearAll);
   const count = useStore((s) => s.records.length);
 
   const doExport = () => {
-    const s = useStore.getState();
-    const { apiKey: _omit, ...safeSettings } = s.settings;
-    void _omit;
-    const data: ExportData = {
-      app: 'looseweight',
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      profile: s.profile,
-      records: s.records,
-      plan: s.plan,
-      seenBadges: s.seenBadges,
-      planMemory: s.planMemory,
-      planChat: s.planChat,
-      trainingPrefs: s.trainingPrefs,
-      workoutPlan: s.workoutPlan,
-      workoutLog: s.workoutLog,
-      workoutChat: s.workoutChat,
-      workoutMemory: s.workoutMemory,
-      settings: safeSettings,
-    };
+    const data = buildExport(useStore.getState());
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -51,12 +32,9 @@ export default function DataManage() {
     try {
       data = validateImport(JSON.parse(await file.text()));
     } catch (err) {
-      toast(
-        lang === 'en'
-          ? `Import failed: ${err instanceof Error ? err.message : 'File is not valid JSON'}`
-          : `导入失败：${err instanceof Error ? err.message : '文件不是合法的 JSON'}`,
-        'error'
-      );
+      // JSON.parse 抛出的 SyntaxError 是浏览器英文原文，统一换成本地化提示
+      const reason = err instanceof Error && !(err instanceof SyntaxError) ? err.message : t('importError.invalidJson');
+      toast(lang === 'en' ? `Import failed: ${reason}` : `导入失败：${reason}`, 'error');
       return;
     }
     const ok = await confirmDialog({

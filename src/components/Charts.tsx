@@ -5,6 +5,7 @@ import type { DailyRecord, KcalStatus, WeekPlan, WorkoutLog } from '../types';
 import { intakeOf, kcalStatus, movingAverage7, hasIntakeData } from '../domain/calc';
 import { burnedOn, netIntake } from '../domain/workout';
 import { BURN_C1, BURN_C2 } from './BurnRing';
+import { useT } from '../i18n';
 
 const AXIS = { lineStyle: { color: 'rgba(185, 115, 70, 0.22)' } };
 const SPLIT = { lineStyle: { color: 'rgba(185, 115, 70, 0.1)' } };
@@ -17,6 +18,7 @@ const TOOLTIP = {
 };
 
 export function WeightChart({ records, target }: { records: DailyRecord[]; target: number }) {
+  const { t } = useT();
   const option = useMemo<EChartsOption>(() => {
     const avg = movingAverage7(records);
     const ws = records.map((r) => r.weightKg);
@@ -25,12 +27,12 @@ export function WeightChart({ records, target }: { records: DailyRecord[]; targe
     return {
       grid: { left: 44, right: 24, top: 36, bottom: 30 },
       tooltip: { ...TOOLTIP, valueFormatter: (v) => `${Number(v).toFixed(1)} kg` },
-      legend: { top: 0, right: 0, textStyle: LABEL, itemWidth: 14, data: ['每日体重', '7 日均线'] },
+      legend: { top: 0, right: 0, textStyle: LABEL, itemWidth: 14, data: [t('chart.dailyWeight'), t('chart.movingAvg')] },
       xAxis: { type: 'time', axisLine: AXIS, axisLabel: { ...LABEL, formatter: '{M}/{d}' }, splitLine: { show: false } },
       yAxis: { type: 'value', min, max, axisLabel: LABEL, splitLine: SPLIT },
       series: [
         {
-          name: '每日体重',
+          name: t('chart.dailyWeight'),
           type: 'line',
           data: records.map((r) => [r.date, r.weightKg]),
           symbol: 'circle',
@@ -40,13 +42,13 @@ export function WeightChart({ records, target }: { records: DailyRecord[]; targe
           markLine: {
             symbol: 'none',
             silent: true,
-            label: { formatter: `目标 ${target} kg`, color: '#099268', position: 'insideEndTop' },
+            label: { formatter: t('chart.targetKg', { n: target }), color: '#099268', position: 'insideEndTop' },
             lineStyle: { color: '#12b886', type: 'dashed', width: 1.5 },
             data: [{ yAxis: target }],
           },
         },
         {
-          name: '7 日均线',
+          name: t('chart.movingAvg'),
           type: 'line',
           smooth: true,
           showSymbol: false,
@@ -59,7 +61,7 @@ export function WeightChart({ records, target }: { records: DailyRecord[]; targe
         },
       ],
     };
-  }, [records, target]);
+  }, [records, target, t]);
   return <EChart option={option} className="chart-box" />;
 }
 
@@ -67,6 +69,7 @@ const BAR: Record<KcalStatus, string> = { ok: '#12b886', slight: '#f59f00', over
 
 /** 柱：摄入（按净摄入状态着色）+ 红色训练消耗；线：净摄入 */
 export function KcalChart({ records, plan, target, log = {} }: { records: DailyRecord[]; plan: WeekPlan | null; target: number; log?: WorkoutLog }) {
+  const { t } = useT();
   const option = useMemo<EChartsOption>(() => {
     const byDate = new Map(records.filter(hasIntakeData).map((r) => [r.date, r]));
     const dates = [...new Set([...byDate.keys(), ...Object.keys(log).filter((d) => burnedOn(log, d) > 0)])].sort();
@@ -81,12 +84,12 @@ export function KcalChart({ records, plan, target, log = {} }: { records: DailyR
     return {
       grid: { left: 48, right: 24, top: 36, bottom: 30 },
       tooltip: { ...TOOLTIP, valueFormatter: (v) => `${v} kcal` },
-      legend: { top: 0, right: 0, textStyle: LABEL, itemWidth: 14, data: hasBurn ? ['摄入', '训练消耗', '净摄入'] : ['摄入'] },
+      legend: { top: 0, right: 0, textStyle: LABEL, itemWidth: 14, data: hasBurn ? [t('chart.intake'), t('chart.burned'), t('chart.net')] : [t('chart.intake')] },
       xAxis: { type: 'category', data: rows.map((r) => r.date.slice(5)), axisLine: AXIS, axisLabel: LABEL },
       yAxis: { type: 'value', axisLabel: LABEL, splitLine: SPLIT },
       series: [
         {
-          name: '摄入',
+          name: t('chart.intake'),
           type: 'bar',
           barMaxWidth: 22,
           itemStyle: { color: BAR.ok },
@@ -94,7 +97,7 @@ export function KcalChart({ records, plan, target, log = {} }: { records: DailyR
           markLine: {
             symbol: 'none',
             silent: true,
-            label: { formatter: `目标 ${target}`, color: '#6e584c', position: 'insideEndTop' },
+            label: { formatter: t('chart.target', { n: target }), color: '#6e584c', position: 'insideEndTop' },
             lineStyle: { color: '#ff7849', type: 'dashed', width: 1.5 },
             data: [{ yAxis: target }],
           },
@@ -102,7 +105,7 @@ export function KcalChart({ records, plan, target, log = {} }: { records: DailyR
         ...(hasBurn
           ? [
             {
-              name: '训练消耗',
+              name: t('chart.burned'),
               type: 'bar' as const,
               barMaxWidth: 22,
               data: rows.map((r) => r.burned),
@@ -114,7 +117,7 @@ export function KcalChart({ records, plan, target, log = {} }: { records: DailyR
               },
             },
             {
-              name: '净摄入',
+              name: t('chart.net'),
               type: 'line' as const,
               data: rows.map((r) => r.net),
               symbol: 'circle',
@@ -126,6 +129,6 @@ export function KcalChart({ records, plan, target, log = {} }: { records: DailyR
           : []),
       ],
     };
-  }, [records, plan, target, log]);
+  }, [records, plan, target, log, t]);
   return <EChart option={option} className="chart-box sm" />;
 }

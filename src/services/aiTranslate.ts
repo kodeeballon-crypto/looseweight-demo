@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { AI_TEMPERATURE, AI_TIMEOUT } from '../config/ai';
 import { create } from 'zustand';
 import { chat, isAiConfigured } from '../ai/client';
 import { extractJson, parseEncouragement } from '../ai/parse';
@@ -8,7 +9,6 @@ import { useStore } from '../store/useStore';
 import {
   MEAL_KEYS,
   hasCjk,
-  type DayPlan,
   type Meal,
   type MealKey,
   type NutritionAnalysis,
@@ -17,6 +17,14 @@ import {
   type WorkoutPlan,
 } from '../types';
 import { generateEncouragement, todayStr } from './encourage';
+import {
+  applyDayMealTranslation,
+  applyNutritionTranslation,
+  applyWeekPlanTranslation,
+  applyWorkoutTranslation,
+  weekPlanSource,
+  workoutSource,
+} from './translateMerge';
 
 interface TranslateStatus {
   encouragement: boolean;
@@ -51,7 +59,7 @@ export async function translateEncouragementToEn(settings: Settings, zhText: str
           content: `Translate the following encouragement message into English:\n\n${zhText}\n\nReturn JSON only: { "text": "English translation" }`,
         },
       ],
-      { timeoutMs: 25000, json: true, temperature: 0.4 },
+      { timeoutMs: AI_TIMEOUT.translateShort, json: true, temperature: AI_TEMPERATURE.translateEncourage },
     );
     return parseEncouragement(raw);
   } catch {
@@ -80,7 +88,7 @@ export async function translateDayMealsToEn(
           content: `Translate the following 4 meals into concise English:\n${JSON.stringify(payload)}\n\nOutput JSON format:\n{"breakfast":{"name":"...","items":"..."},"lunch":{"name":"...","items":"..."},"dinner":{"name":"...","items":"..."},"snack":{"name":"...","items":"..."}}`,
         },
       ],
-      { timeoutMs: 25000, json: true, temperature: 0.3 },
+      { timeoutMs: AI_TIMEOUT.translateShort, json: true, temperature: AI_TEMPERATURE.translate },
     );
     const data = extractJson(raw) as Record<string, unknown>;
     const out: Partial<Record<MealKey, { nameEn: string; itemsEn: string }>> = {};
@@ -96,7 +104,7 @@ export async function translateDayMealsToEn(
   }
 }
 
-/** 调用 AI 将整周中文饮食计划（7 天 × 4 餐 + 本周要点）翻译为英文 */
+/** 调用 AI 将整周中文饮食计划（7 天 × 4 餐 + 本周要点）翻译为英文；只写入原文仍一致的条目 */
 export async function translateWeekPlanToEn(settings: Settings, plan: WeekPlan): Promise<WeekPlan | null> {
   if (!isAiConfigured(settings)) return null;
   const daysToTranslate = plan.days.filter((d) =>
@@ -105,13 +113,9 @@ export async function translateWeekPlanToEn(settings: Settings, plan: WeekPlan):
   const tipsNeedTrans = Boolean(plan.tips?.length && (!plan.tipsEn || plan.tipsEn.length === 0) && plan.tips.some((t) => hasCjk(t)));
   if (daysToTranslate.length === 0 && !tipsNeedTrans) return null;
 
-  const inputPayload = {
-    days: daysToTranslate.map((d) => ({
-      weekday: d.weekday,
-      meals: Object.fromEntries(MEAL_KEYS.map((k) => [k, { name: d.meals[k].name, items: d.meals[k].items }])),
-    })),
-    tips: tipsNeedTrans ? plan.tips : undefined,
-  };
+  const source = weekPlanSource(plan, daysToTranslate.map((d) => d.weekday));
+  const inputPayload = { days: source.days, tips: tipsNeedTrans ? source.tips : undefined };
+  if (!tipsNeedTrans) delete source.tips;
 
   try {
     const raw = await chat(
@@ -127,66 +131,20 @@ export async function translateWeekPlanToEn(settings: Settings, plan: WeekPlan):
           content: `Translate this meal plan data into English:\n${JSON.stringify(inputPayload)}\n\nReturn JSON with the exact same structure: {"days":[{"weekday":1,"meals":{"breakfast":{"name":"...","items":"..."},"lunch":{"name":"...","items":"..."},"dinner":{"name":"...","items":"..."},"snack":{"name":"...","items":"..."}}}],"tips":["..."]}`,
         },
       ],
-      { timeoutMs: 60000, json: true, temperature: 0.3 },
+      { timeoutMs: AI_TIMEOUT.translateWeek, json: true, temperature: AI_TEMPERATURE.translate },
     );
-    const data = extractJson(raw) as Record<string, unknown>;
-    const rawDays = Array.isArray(data?.days) ? data.days : [];
-    const byWeekday = new Map<number, Record<string, unknown>>();
-    for (const d of rawDays) {
-      if (d && typeof d === 'object') {
-        const o = d as Record<string, unknown>;
-        const w = Number(o.weekday);
-        if (w >= 1 && w <= 7 && o.meals && typeof o.meals === 'object') {
-          byWeekday.set(w, o.meals as Record<string, unknown>);
-        }
-      }
-    }
-
-    const latestPlan = useStore.getState().plan ?? plan;
-    const nextDays: DayPlan[] = latestPlan.days.map((d) => {
-      const trMeals = byWeekday.get(d.weekday);
-      if (!trMeals) return d;
-      const meals = { ...d.meals };
-      for (const k of MEAL_KEYS) {
-        const m = trMeals[k] as Record<string, unknown> | undefined;
-        const nameEn = typeof m?.name === 'string' ? m.name.trim() : '';
-        const itemsEn = typeof m?.items === 'string' ? m.items.trim() : '';
-        if (nameEn) {
-          meals[k] = {
-            ...meals[k],
-            nameEn: meals[k].nameEn || nameEn,
-            itemsEn: meals[k].itemsEn || itemsEn || meals[k].items,
-          };
-        }
-      }
-      return { ...d, meals };
-    });
-
-    const tipsEn = Array.isArray(data?.tips)
-      ? data.tips.filter((t): t is string => typeof t === 'string' && t.trim() !== '').map((t) => t.trim())
-      : latestPlan.tipsEn;
-
-    return {
-      ...latestPlan,
-      days: nextDays,
-      ...(tipsEn && tipsEn.length > 0 ? { tipsEn } : {}),
-    };
+    // 以响应到达时的最新计划为准；计划被清空/修改的部分会被丢弃
+    return applyWeekPlanTranslation(useStore.getState().plan, source, extractJson(raw));
   } catch {
     return null;
   }
 }
 
-/** 调用 AI 将整周中文训练计划（7 天重点、动作名称与要点、本周提示）翻译为英文 */
+/** 调用 AI 将整周中文训练计划（7 天重点、动作名称与要点、本周提示）翻译为英文；只写入原文仍一致的条目 */
 export async function translateWorkoutPlanToEn(settings: Settings, plan: WorkoutPlan): Promise<WorkoutPlan | null> {
   if (!isAiConfigured(settings)) return null;
-  const inputPayload = {
-    days: plan.days.map((d) => ({
-      weekday: d.weekday,
-      focus: d.focus,
-      exercises: d.exercises.map((e) => ({ id: e.id, name: e.name, detail: e.detail })),
-    })),
-    tips: plan.tips,
-  };
+  const source = workoutSource(plan);
+  const inputPayload = source;
 
   try {
     const raw = await chat(
@@ -202,61 +160,18 @@ export async function translateWorkoutPlanToEn(settings: Settings, plan: Workout
           content: `Translate this workout plan into English:\n${JSON.stringify(inputPayload)}\n\nReturn JSON with the exact same structure: {"days":[{"weekday":1,"focus":"...","exercises":[{"id":"...","name":"...","detail":"..."}]}],"tips":["..."]}`,
         },
       ],
-      { timeoutMs: 45000, json: true, temperature: 0.3 },
+      { timeoutMs: AI_TIMEOUT.translateWorkout, json: true, temperature: AI_TEMPERATURE.translate },
     );
-    const data = extractJson(raw) as Record<string, unknown>;
-    const rawDays = Array.isArray(data?.days) ? data.days : [];
-    const byWeekday = new Map<number, Record<string, unknown>>();
-    for (const d of rawDays) {
-      if (d && typeof d === 'object') {
-        const o = d as Record<string, unknown>;
-        byWeekday.set(Number(o.weekday), o);
-      }
-    }
-
-    const latest = useStore.getState().workoutPlan ?? plan;
-    const nextDays = latest.days.map((d) => {
-      const tr = byWeekday.get(d.weekday);
-      if (!tr) return d;
-      const focusEn = typeof tr.focus === 'string' && tr.focus.trim() ? tr.focus.trim() : d.focusEn;
-      const trExList = Array.isArray(tr.exercises) ? tr.exercises : [];
-      const exMap = new Map<string, { name: string; detail: string }>();
-      trExList.forEach((rawEx, idx) => {
-        if (rawEx && typeof rawEx === 'object') {
-          const eo = rawEx as Record<string, unknown>;
-          const id = typeof eo.id === 'string' ? eo.id : d.exercises[idx]?.id;
-          const name = typeof eo.name === 'string' ? eo.name.trim() : '';
-          const detail = typeof eo.detail === 'string' ? eo.detail.trim() : '';
-          if (id && name) exMap.set(id, { name, detail });
-        }
-      });
-      return {
-        ...d,
-        ...(focusEn ? { focusEn } : {}),
-        exercises: d.exercises.map((e) => {
-          const hit = exMap.get(e.id);
-          return hit ? { ...e, nameEn: e.nameEn || hit.name, detailEn: e.detailEn || hit.detail } : e;
-        }),
-      };
-    });
-
-    const tipsEn = Array.isArray(data?.tips)
-      ? data.tips.filter((t): t is string => typeof t === 'string' && t.trim() !== '').map((t) => t.trim())
-      : latest.tipsEn;
-
-    return {
-      ...latest,
-      days: nextDays,
-      ...(tipsEn && tipsEn.length > 0 ? { tipsEn } : {}),
-    };
+    return applyWorkoutTranslation(useStore.getState().workoutPlan, source, extractJson(raw));
   } catch {
     return null;
   }
 }
 
-/** 调用 AI 将营养分析点评与建议翻译为英文 */
+/** 调用 AI 将营养分析点评与建议翻译为英文；只在缓存仍是同一次分析时写入 */
 export async function translateNutritionToEn(settings: Settings, analysis: NutritionAnalysis): Promise<NutritionAnalysis | null> {
   if (!isAiConfigured(settings)) return null;
+  const source = { date: analysis.date, signature: analysis.signature, summary: analysis.summary, suggestions: [...analysis.suggestions] };
   try {
     const raw = await chat(
       settings,
@@ -271,31 +186,32 @@ export async function translateNutritionToEn(settings: Settings, analysis: Nutri
           content: `Translate into English:\n${JSON.stringify({ summary: analysis.summary, suggestions: analysis.suggestions })}`,
         },
       ],
-      { timeoutMs: 25000, json: true, temperature: 0.3 },
+      { timeoutMs: AI_TIMEOUT.translateShort, json: true, temperature: AI_TEMPERATURE.translate },
     );
     const data = extractJson(raw) as Record<string, unknown>;
     const summaryEn = typeof data?.summary === 'string' ? data.summary.trim() : '';
     const suggestionsEn = Array.isArray(data?.suggestions)
       ? data.suggestions.filter((s): s is string => typeof s === 'string' && s.trim() !== '').map((s) => s.trim())
       : [];
-    if (!summaryEn) return null;
-    return {
-      ...analysis,
-      summaryEn,
-      ...(suggestionsEn.length > 0 ? { suggestionsEn } : {}),
-    };
+    return applyNutritionTranslation(useStore.getState().nutritionCache[analysis.date], source, { summaryEn, suggestionsEn });
   } catch {
     return null;
   }
 }
 
+/** 内容签名：原文任何变化都会触发重新翻译（不再只依赖 createdAt） */
+const mealPlanSig = (p: WeekPlan) =>
+  JSON.stringify([p.createdAt, p.days.map((d) => [d.weekday, MEAL_KEYS.map((k) => [d.meals[k].name, d.meals[k].items])]), p.tips ?? []]);
+const workoutSig = (p: WorkoutPlan) =>
+  JSON.stringify([p.createdAt, p.days.map((d) => [d.weekday, d.focus, d.exercises.map((e) => [e.id, e.name, e.detail])]), p.tips ?? []]);
+
 /**
- * 全局自动同步 Hook：当切换到英文 (en) 时，自动通过 DeepSeek 将已有的中文鼓励语、今日食谱、整周饮食计划、训练周表、营养点评转换为英文并缓存
+ * 全局自动同步 Hook：当切换到英文 (en) 时，自动通过 DeepSeek 将已有的中文鼓励语、今日食谱、整周饮食计划、训练周表、营养点评转换为英文并缓存。
+ * 所有回写都会先核对“原文是否仍与发送时一致”，过期响应直接丢弃；失败后清除签名，下次数据或语言变化时可重试。
  */
 export function useAiTranslateSync() {
   const { lang } = useT();
-  const { profile, records, plan, workoutPlan, nutritionCache, settings, setEncouragement, updateMeal, setPlan, setWorkoutPlan, setNutrition } =
-    useStore();
+  const { profile, records, plan, workoutPlan, nutritionCache, settings, setPlan, setWorkoutPlan, setNutrition } = useStore();
   const setFlag = useTranslateStatus((s) => s.setFlag);
 
   const encKeyRef = useRef('');
@@ -316,28 +232,41 @@ export function useAiTranslateSync() {
     const hasEn = Boolean(todayRec.encouragementEn?.trim() || (todayRec.encouragement?.trim() && !hasCjk(todayRec.encouragement)));
     if (hasEn) return;
 
-    const sig = `${today}-${todayRec.weightKg}-${todayRec.encouragement ?? ''}`;
+    const sourceZh = todayRec.encouragement ?? '';
+    const sig = `${today}-${todayRec.weightKg}-${sourceZh}`;
     if (encKeyRef.current === sig) return;
     encKeyRef.current = sig;
 
+    /** 回写前核对：记录仍在、中文原文未变、且尚无英文 */
+    const stillValid = () => {
+      const cur = useStore.getState().records.find((r) => r.date === today);
+      return !!cur && (cur.encouragement ?? '') === sourceZh && !cur.encouragementEn?.trim();
+    };
+
     setFlag('encouragement', true);
     void (async () => {
+      let ok = false;
       try {
-        if (todayRec.encouragement && hasCjk(todayRec.encouragement) && isAiConfigured(settings)) {
-          const translated = await translateEncouragementToEn(settings, todayRec.encouragement);
-          if (translated) {
-            setEncouragement(today, translated, 'en');
+        if (sourceZh && hasCjk(sourceZh) && isAiConfigured(settings)) {
+          const translated = await translateEncouragementToEn(settings, sourceZh);
+          if (translated && stillValid()) {
+            useStore.getState().setEncouragement(today, translated, 'en');
+            ok = true;
             return;
           }
         }
         const s = useStore.getState();
         const res = await generateEncouragement({ ...s, profile, date: today, newMilestone: false, lang: 'en' });
-        if (res.text) setEncouragement(today, res.text, 'en');
+        if (res.text && stillValid()) {
+          useStore.getState().setEncouragement(today, res.text, 'en');
+          ok = true;
+        }
       } finally {
+        if (!ok && encKeyRef.current === sig) encKeyRef.current = '';
         setFlag('encouragement', false);
       }
     })();
-  }, [lang, profile, today, todayRec, settings, setEncouragement, setFlag]);
+  }, [lang, profile, today, todayRec, settings, setFlag]);
 
   // 2. 自动转换今日四餐（快速响应今日页面，再后台补齐整周食谱）
   useEffect(() => {
@@ -354,7 +283,7 @@ export function useAiTranslateSync() {
 
     if (!todayNeeds && !weekNeeds) return;
 
-    const sig = `${plan.createdAt}-${todayDayPlan ? MEAL_KEYS.map((k) => todayDayPlan.meals[k].name).join('|') : ''}`;
+    const sig = mealPlanSig(plan);
     if (dayMealKeyRef.current === sig && weekPlanKeyRef.current === sig) return;
 
     setFlag('meals', true);
@@ -362,26 +291,24 @@ export function useAiTranslateSync() {
       try {
         if (todayNeeds && todayDayPlan && dayMealKeyRef.current !== sig) {
           dayMealKeyRef.current = sig;
+          const source = weekPlanSource(plan, [todayWeekday]).days[0]?.meals ?? {};
           const tr = await translateDayMealsToEn(settings, todayDayPlan.meals);
-          for (const k of MEAL_KEYS) {
-            const hit = tr[k];
-            if (hit) {
-              const cur = useStore.getState().plan?.days.find((d) => d.weekday === todayWeekday)?.meals[k];
-              if (cur) updateMeal(todayWeekday, k, { ...cur, nameEn: hit.nameEn, itemsEn: hit.itemsEn });
-            }
-          }
+          const merged = applyDayMealTranslation(useStore.getState().plan, todayWeekday, source, tr);
+          if (merged) setPlan(merged);
+          else if (Object.keys(tr).length === 0 && dayMealKeyRef.current === sig) dayMealKeyRef.current = '';
         }
         const latestPlan = useStore.getState().plan;
         if (latestPlan && weekPlanKeyRef.current !== sig) {
           weekPlanKeyRef.current = sig;
           const fullTranslated = await translateWeekPlanToEn(settings, latestPlan);
           if (fullTranslated) setPlan(fullTranslated);
+          else if (weekPlanKeyRef.current === sig) weekPlanKeyRef.current = '';
         }
       } finally {
         setFlag('meals', false);
       }
     })();
-  }, [lang, plan, todayDayPlan, todayWeekday, settings, updateMeal, setPlan, setFlag]);
+  }, [lang, plan, todayDayPlan, todayWeekday, settings, setPlan, setFlag]);
 
   // 3. 自动转换训练周表
   useEffect(() => {
@@ -394,13 +321,15 @@ export function useAiTranslateSync() {
       ) || Boolean(workoutPlan.tips?.length && (!workoutPlan.tipsEn || workoutPlan.tipsEn.length === 0) && workoutPlan.tips.some((t) => hasCjk(t)));
 
     if (!needs) return;
-    if (workoutKeyRef.current === workoutPlan.createdAt) return;
-    workoutKeyRef.current = workoutPlan.createdAt;
+    const sig = workoutSig(workoutPlan);
+    if (workoutKeyRef.current === sig) return;
+    workoutKeyRef.current = sig;
 
     setFlag('workout', true);
     void translateWorkoutPlanToEn(settings, workoutPlan)
       .then((next) => {
         if (next) setWorkoutPlan(next);
+        else if (workoutKeyRef.current === sig) workoutKeyRef.current = '';
       })
       .finally(() => setFlag('workout', false));
   }, [lang, workoutPlan, settings, setWorkoutPlan, setFlag]);
@@ -409,7 +338,7 @@ export function useAiTranslateSync() {
   useEffect(() => {
     if (lang !== 'en' || !todayNutri || !isAiConfigured(settings)) return;
     if (todayNutri.summaryEn || !hasCjk(todayNutri.summary)) return;
-    const sig = `${todayNutri.date}-${todayNutri.signature}`;
+    const sig = `${todayNutri.date}-${todayNutri.signature}-${todayNutri.summary}`;
     if (nutriKeyRef.current === sig) return;
     nutriKeyRef.current = sig;
 
@@ -417,6 +346,7 @@ export function useAiTranslateSync() {
     void translateNutritionToEn(settings, todayNutri)
       .then((next) => {
         if (next) setNutrition(next);
+        else if (nutriKeyRef.current === sig) nutriKeyRef.current = '';
       })
       .finally(() => setFlag('nutrition', false));
   }, [lang, todayNutri, settings, setNutrition, setFlag]);

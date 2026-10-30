@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { AI_TIMEOUT } from '../config/ai';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useStore } from '../store/useStore';
@@ -18,7 +19,6 @@ import TrainingPrefsModal from '../components/TrainingPrefsModal';
 import WorkoutChat, { type PendingWorkout } from '../components/WorkoutChat';
 import BurnRing from '../components/BurnRing';
 import { Modal, confirmDialog } from '../components/Modal';
-import { DISCLAIMER } from '../constants';
 import { useT } from '../i18n';
 
 export default function Workout() {
@@ -45,7 +45,7 @@ export default function Workout() {
   const [pending, setPending] = useState<PendingWorkout | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const wide = useWide();
-  const { lang } = useT();
+  const { t, lang } = useT();
   const preview = useMemo(() => (pending ? new Map(pending.changes.map((c) => [c.weekday, c.next])) : undefined), [pending]);
   if (!profile) return null;
 
@@ -67,7 +67,7 @@ export default function Workout() {
   const runGenerate = async (prefs: TrainingPrefs) => {
     setGenerating(true);
     try {
-      const raw = await chat(settings, workoutPlanMessages(profile, info.weightKg, prefs, workoutMemory), { timeoutMs: 60000, json: true });
+      const raw = await chat(settings, workoutPlanMessages(profile, info.weightKg, prefs, workoutMemory), { timeoutMs: AI_TIMEOUT.weekPlan, json: true });
       setWorkoutPlan(parseWorkoutPlan(raw));
       setPending(null);
       toast(lang === 'en' ? 'New weekly workout plan generated 💪' : '新的一周训练计划已生成 💪', 'success');
@@ -112,7 +112,7 @@ export default function Workout() {
     if (!day) return;
     setBusyId(ex.id);
     try {
-      const raw = await chat(settings, replaceExerciseMessages(profile, trainingPrefs ?? DEFAULT_PREFS, day, ex), { timeoutMs: 20000, json: true });
+      const raw = await chat(settings, replaceExerciseMessages(profile, trainingPrefs ?? DEFAULT_PREFS, day, ex), { timeoutMs: AI_TIMEOUT.swap, json: true });
       const next = parseExercise(raw);
       updateExercise(w, ex.id, next);
       toast(
@@ -287,7 +287,7 @@ export default function Workout() {
       )}
 
       <p className="field-hint mt-16" style={{ textAlign: 'center' }}>
-        ⚕️ {DISCLAIMER} {lang === 'en' ? 'Stop immediately if you experience pain or discomfort.' : '训练中如出现疼痛或不适请立即停止。'}
+        ⚕️ {t('doc.aiDisclaimer')} {lang === 'en' ? 'Stop immediately if you experience pain or discomfort.' : '训练中如出现疼痛或不适请立即停止。'}
       </p>
 
       <WorkoutDayModal

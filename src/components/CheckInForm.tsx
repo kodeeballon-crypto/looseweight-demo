@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { DailyRecord, MealKey, WeekPlan } from '../types';
+import type { DailyRecord, Meal, MealKey, WeekPlan } from '../types';
 import { MEAL_EMOJI, MEAL_KEYS, getMealLabel, getMealText } from '../types';
 import { intakeOf, weekdayOf } from '../domain/calc';
+import { LIMITS } from '../config/limits';
 import { useT } from '../i18n';
 import type { Lang } from '../i18n/types';
 import { useTranslateStatus } from '../services/aiTranslate';
@@ -19,12 +20,13 @@ interface Props {
   onSubmit: (v: CheckInValues) => void;
 }
 
-/** 体重：30–300 kg，最多 1 位小数 */
+/** 体重：LIMITS.weightKg 范围内，最多 1 位小数 */
 export function validateWeight(s: string, lang: Lang = 'zh'): string | null {
+  const [min, max] = LIMITS.weightKg;
   if (s.trim() === '') return lang === 'en' ? 'Please enter your weight' : '请输入体重';
   if (!/^\d{2,3}(\.\d)?$/.test(s.trim())) return lang === 'en' ? 'Please enter a number, max 1 decimal' : '请输入数字，最多 1 位小数';
   const n = Number(s);
-  if (n < 30 || n > 300) return lang === 'en' ? 'Weight must be between 30–300 kg' : '体重需在 30–300 kg 之间';
+  if (n < min || n > max) return lang === 'en' ? `Weight must be between ${min}–${max} kg` : `体重需在 ${min}–${max} kg 之间`;
   return null;
 }
 
@@ -37,12 +39,27 @@ export default function CheckInForm({ date, initial, plan, submitLabel, busy, id
   const [touched, setTouched] = useState(false);
 
   const day = plan?.days.find((d) => d.weekday === weekdayOf(date));
+  /** 已打卡的餐显示打卡时的快照（同一道菜时沿用计划里的英文翻译），其余显示当前计划 */
+  const mealFor = (k: MealKey): Meal | undefined => {
+    const planned = day?.meals[k];
+    const snap = initial?.mealSnapshot?.[k];
+    if (!snap) return planned;
+    if (planned && planned.name === snap.name && planned.items === snap.items)
+      return { ...snap, nameEn: snap.nameEn ?? planned.nameEn, itemsEn: snap.itemsEn ?? planned.itemsEn };
+    return snap;
+  };
+  const shownKeys = MEAL_KEYS.filter((k) => mealFor(k));
+  const eatenKeys = MEAL_KEYS.filter((k) => meals.includes(k) && mealFor(k));
+  const mealSnapshot: Partial<Record<MealKey, Meal>> | undefined = eatenKeys.length
+    ? Object.fromEntries(eatenKeys.map((k) => [k, mealFor(k)!]))
+    : undefined;
   const weightErr = validateWeight(weight, lang);
   const extraNum = extra.trim() === '' ? 0 : Number(extra);
-  const extraErr = !Number.isFinite(extraNum) || extraNum < 0 || extraNum > 10000
-    ? (lang === 'en' ? 'Please enter a number between 0–10000' : '请输入 0–10000 的数字')
+  const [extraMin, extraMax] = LIMITS.extraKcal;
+  const extraErr = !Number.isFinite(extraNum) || extraNum < extraMin || extraNum > extraMax
+    ? (lang === 'en' ? `Please enter a number between ${extraMin}–${extraMax}` : `请输入 ${extraMin}–${extraMax} 的数字`)
     : null;
-  const intake = intakeOf({ date, mealsEaten: meals, extraKcal: extraNum || undefined }, plan).kcal;
+  const intake = intakeOf({ date, mealsEaten: meals, extraKcal: extraNum || undefined, mealSnapshot }, plan).kcal;
 
   const toggle = (k: MealKey) => setMeals((m) => (m.includes(k) ? m.filter((x) => x !== k) : [...m, k]));
 
@@ -55,13 +72,15 @@ export default function CheckInForm({ date, initial, plan, submitLabel, busy, id
       weightKg: Number(weight),
       mealsEaten: MEAL_KEYS.filter((k) => meals.includes(k)),
       extraKcal: extraNum > 0 ? Math.round(extraNum) : undefined,
+      // 保存“看到的就是存下的”：打卡时冻结所勾选餐次的菜名与热量
+      mealSnapshot,
     });
   };
 
   return (
     <form className="stack" onSubmit={submit} noValidate>
       <div className="field">
-        <label htmlFor={`${idPrefix}-weight`}>{lang === 'en' ? 'Today’s Weight' : '今日体重'}</label>
+        <label htmlFor={`${idPrefix}-weight`}>{lang === 'en' ? "Today's Weight" : '今日体重'}</label>
         <div className="input-suffix">
           <input
             id={`${idPrefix}-weight`}
@@ -92,11 +111,12 @@ export default function CheckInForm({ date, initial, plan, submitLabel, busy, id
           </span>
           <span className="tag tag-kcal num">{lang === 'en' ? `Total ${intake} kcal` : `合计 ${intake} kcal`}</span>
         </div>
-        {day ? (
+        {shownKeys.length ? (
           <div className="meal-checks">
-            {MEAL_KEYS.map((k) => {
+            {shownKeys.map((k) => {
               const on = meals.includes(k);
-              const mealText = getMealText(day.meals[k], lang);
+              const meal = mealFor(k)!;
+              const mealText = getMealText(meal, lang);
               return (
                 <button
                   type="button"
@@ -115,7 +135,7 @@ export default function CheckInForm({ date, initial, plan, submitLabel, busy, id
                       {mealText.name}
                     </span>
                   </span>
-                  <span className="mc-kcal num">{day.meals[k].kcal}</span>
+                  <span className="mc-kcal num">{meal.kcal}</span>
                 </button>
               );
             })}

@@ -215,7 +215,7 @@ export default function Stats() {
                 plan={plan}
                 submitLabel={lang === 'en' ? 'Save Changes' : '保存修改'}
                 onSubmit={(v) => {
-                  upsertRecord({ ...v, encouragement: editing.encouragement });
+                  upsertRecord({ ...v, encouragement: editing.encouragement, encouragementEn: editing.encouragementEn });
                   setEditing(null);
                   toast(lang === 'en' ? 'Changes saved' : '已保存修改', 'success');
                 }}

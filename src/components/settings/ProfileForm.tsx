@@ -5,6 +5,7 @@ import { DEFAULT_LIFESTYLE } from '../../types';
 import { ACTIVITY_LABELS_MAP, bmiLevel, calcBmi, calcBmr, calcKcalTarget, calcTdee } from '../../domain/calc';
 import { BREAKFAST_LABELS_MAP, DINNER_LABELS_MAP, DINNER_OPTIONS, LUNCH_LABELS_MAP, ROUTINE_LABELS_MAP } from '../../domain/lifestyle';
 import { useT } from '../../i18n';
+import { LIMITS } from '../../config/limits';
 
 interface Props {
   initial: Profile | null;
@@ -37,11 +38,15 @@ export default function ProfileForm({ initial, currentWeight, onSave, saveLabel 
   const [touched, setTouched] = useState(false);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((s) => ({ ...s, [k]: v }));
 
+  const [hMin, hMax] = LIMITS.heightCm;
+  const [wMin, wMax] = LIMITS.weightKg;
+  const [aMin, aMax] = LIMITS.age;
+  const weightMsg = lang === 'en' ? `Weight must be between ${wMin}–${wMax} kg` : `体重需在 ${wMin}–${wMax} kg`;
   const rules: Record<'heightCm' | 'startWeightKg' | 'targetWeightKg' | 'age', [number, number, string]> = {
-    heightCm: [100, 250, lang === 'en' ? 'Height must be between 100–250 cm' : '身高需在 100–250 cm'],
-    startWeightKg: [30, 300, lang === 'en' ? 'Weight must be between 30–300 kg' : '体重需在 30–300 kg'],
-    targetWeightKg: [30, 300, lang === 'en' ? 'Weight must be between 30–300 kg' : '体重需在 30–300 kg'],
-    age: [10, 100, lang === 'en' ? 'Age must be between 10–100 years' : '年龄需在 10–100 岁'],
+    heightCm: [hMin, hMax, lang === 'en' ? `Height must be between ${hMin}–${hMax} cm` : `身高需在 ${hMin}–${hMax} cm`],
+    startWeightKg: [wMin, wMax, weightMsg],
+    targetWeightKg: [wMin, wMax, weightMsg],
+    age: [aMin, aMax, lang === 'en' ? `Age must be between ${aMin}–${aMax} years` : `年龄需在 ${aMin}–${aMax} 岁`],
   };
 
   const errors: Partial<Record<keyof Form, string>> = {};

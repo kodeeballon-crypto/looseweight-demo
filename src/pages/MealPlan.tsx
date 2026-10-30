@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { AI_TIMEOUT } from '../config/ai';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useStore } from '../store/useStore';
@@ -13,7 +14,6 @@ import { todayStr } from '../services/encourage';
 import WeekTable, { cellId } from '../components/WeekTable';
 import MealEditModal from '../components/MealEditModal';
 import { Modal, confirmDialog } from '../components/Modal';
-import { DISCLAIMER } from '../constants';
 import PlanChat, { type PendingChange } from '../components/PlanChat';
 import { avgDailyKcal, previewMap } from '../domain/planChat';
 import { useWide } from '../hooks/useWide';
@@ -28,7 +28,7 @@ export default function MealPlan() {
   const [pending, setPending] = useState<PendingChange | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const wide = useWide();
-  const { lang } = useT();
+  const { t, lang } = useT();
   const preview = useMemo(() => (pending ? previewMap(pending.changes) : undefined), [pending]);
   if (!profile) return null;
 
@@ -44,7 +44,7 @@ export default function MealPlan() {
     }))) return;
     setGenerating(true);
     try {
-      const raw = await chat(settings, weekPlanMessages(profile, info.weightKg, info.target, planMemory), { timeoutMs: 60000, json: true });
+      const raw = await chat(settings, weekPlanMessages(profile, info.weightKg, info.target, planMemory), { timeoutMs: AI_TIMEOUT.weekPlan, json: true });
       setPlan(parseWeekPlan(raw, info.target));
       setPending(null);
       toast(lang === 'en' ? 'New weekly meal plan generated 🥗' : '新的一周饮食计划已生成 🥗', 'success');
@@ -61,7 +61,7 @@ export default function MealPlan() {
     setBusyCell(cellId(w, k));
     try {
       const others = Object.fromEntries(MEAL_KEYS.filter((x) => x !== k).map((x) => [x, day.meals[x]]));
-      const raw = await chat(settings, replaceMealMessages(profile, k, day.meals[k], others), { timeoutMs: 20000, json: true });
+      const raw = await chat(settings, replaceMealMessages(profile, k, day.meals[k], others), { timeoutMs: AI_TIMEOUT.swap, json: true });
       const meal = parseMeal(raw);
       updateMeal(w, k, meal);
       toast(
@@ -166,7 +166,7 @@ export default function MealPlan() {
 
       {plan && aiReady && !wide && (
         <>
-          <button id="plan-chat-fab" className="chat-fab" onClick={() => setDrawerOpen(true)} aria-label="打开 AI 营养师对话">
+          <button id="plan-chat-fab" className="chat-fab" onClick={() => setDrawerOpen(true)} aria-label={t('a11y.openDietitian')}>
             🧑‍🍳<span>{lang === 'en' ? 'Adjust Plan' : '调整食谱'}</span>
             {pending && <i className="chat-fab-dot" />}
           </button>
@@ -175,7 +175,7 @@ export default function MealPlan() {
         </>
       )}
 
-      <p className="field-hint mt-16" style={{ textAlign: 'center' }}>⚕️ {DISCLAIMER}</p>
+      <p className="field-hint mt-16" style={{ textAlign: 'center' }}>⚕️ {t('doc.aiDisclaimer')}</p>
 
       <MealEditModal
         open={!!editing}

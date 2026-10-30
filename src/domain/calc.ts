@@ -128,12 +128,17 @@ export interface Intake {
   hasPlan: boolean;
 }
 
-/** 当日摄入 = Σ(当天周计划中被勾选餐次的 kcal) + extraKcal */
-export function intakeOf(record: Pick<DailyRecord, 'date' | 'mealsEaten' | 'extraKcal'>, plan: WeekPlan | null): Intake {
+/**
+ * 当日摄入 = Σ(被勾选餐次的 kcal) + extraKcal。
+ * 餐次热量优先取打卡时的快照（mealSnapshot），没有快照时才读当前周计划（如打卡表单的实时预览）。
+ */
+export function intakeOf(record: Pick<DailyRecord, 'date' | 'mealsEaten' | 'extraKcal' | 'mealSnapshot'>, plan: WeekPlan | null): Intake {
   const extra = record.extraKcal && record.extraKcal > 0 ? record.extraKcal : 0;
   const day = plan?.days.find((d) => d.weekday === weekdayOf(record.date));
-  if (!day) return { kcal: extra, hasPlan: false };
-  const planned = record.mealsEaten.reduce((sum, k) => sum + (day.meals[k]?.kcal ?? 0), 0);
+  const snap = record.mealSnapshot;
+  const hasSnap = !!snap && record.mealsEaten.some((k) => snap[k]);
+  if (!day && !hasSnap) return { kcal: extra, hasPlan: false };
+  const planned = record.mealsEaten.reduce((sum, k) => sum + (snap?.[k]?.kcal ?? day?.meals[k]?.kcal ?? 0), 0);
   return { kcal: Math.round(planned + extra), hasPlan: true };
 }
 

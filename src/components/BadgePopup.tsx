@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import type { Badge } from '../domain/badges';
 import { useStore } from '../store/useStore';
 import { Modal } from './Modal';
+import { useT } from '../i18n';
 
 const useBadgeQueue = create<{ badges: Badge[]; set: (b: Badge[]) => void }>((set) => ({
   badges: [],
@@ -47,6 +48,7 @@ function Confetti() {
 
 export function BadgeHost() {
   const { badges, set } = useBadgeQueue();
+  const { t } = useT();
   const markSeen = useStore((s) => s.markBadgesSeen);
   const close = () => {
     markSeen(badges.map((b) => b.id));
@@ -61,7 +63,7 @@ export function BadgeHost() {
         {main && (
           <>
             <div className="faint" style={{ fontSize: 13, letterSpacing: 2 }}>
-              🎊 解锁新徽章
+              {t('badge.unlocked')}
             </div>
             <div className="badge-emoji" style={{ margin: '18px 0 10px' }}>
               {main.emoji}
@@ -82,7 +84,7 @@ export function BadgeHost() {
               </div>
             )}
             <button id="badge-close" className="btn btn-primary btn-lg mt-24" onClick={close}>
-              太棒了，继续加油！
+              {t('badge.close')}
             </button>
           </>
         )}

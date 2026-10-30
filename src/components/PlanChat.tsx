@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AI_TEMPERATURE, AI_TIMEOUT } from '../config/ai';
 import { useStore } from '../store/useStore';
 import { toast } from '../store/toast';
 import type { MealChange } from '../types';
@@ -65,9 +66,9 @@ export default function PlanChat({ variant, open, onClose, pending, onPending }:
     try {
       const target = energyInfo(profile, records).target;
       const res = await chat(settings, adjustPlanMessages({ profile, kcalTarget: target, plan, memory: planMemory, history, userText: text }), {
-        timeoutMs: 45000,
+        timeoutMs: AI_TIMEOUT.chat,
         json: true,
-        temperature: 0.6,
+        temperature: AI_TEMPERATURE.chat,
       });
       const adj = parsePlanAdjustment(res);
       const id = uid();

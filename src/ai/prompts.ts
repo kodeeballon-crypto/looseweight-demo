@@ -6,7 +6,8 @@ import { lifestyleOf, lifestyleText } from '../domain/lifestyle';
 import { getLang } from '../i18n';
 import type { Lang } from '../i18n/types';
 
-const SEX_LABEL = { male: '男', female: '女' } as const;
+/** 提示词中使用的性别称呼（提示词正文为中文） */
+export const SEX_LABEL = { male: '男', female: '女' } as const;
 
 const EN_DIET_RULE = `\n\n【Output Language Requirement】\nOutput language: English.\nAll user-facing text fields ("name", "items", "tips", "reply", "memoryAdd") MUST be written in natural, concise English while keeping the Chinese home-cooking (Chinese home cooking) fat-loss cuisine style. Output strictly valid JSON only.`;
 

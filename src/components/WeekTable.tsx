@@ -27,7 +27,7 @@ export default function WeekTable({ plan, today, busyCell, aiReady, onEdit, onSw
         {days.map((d) => (
           <div key={d.weekday} className={`wk-day-head ${hl(d.weekday)}`}>
             {WEEKDAY_LABELS_MAP[lang][d.weekday - 1]}
-            <small>{d.weekday === today ? (lang === 'en' ? 'Today’s meals' : '今天吃这些') : ' '}</small>
+            <small>{d.weekday === today ? (lang === 'en' ? "Today's meals" : '今天吃这些') : ' '}</small>
             {d.weekday === today && <span className="today-flag">TODAY</span>}
           </div>
         ))}

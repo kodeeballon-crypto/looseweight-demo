@@ -3,11 +3,10 @@ import type { Exercise, PlanChatMessage, Profile, TrainingPrefs, WorkoutDay, Wor
 import { WEEKDAY_LABELS } from '../types';
 import { bmiLevel, calcBmi, round1 } from '../domain/calc';
 import { prefsText } from '../domain/workout';
-import { CHAT_HISTORY_MAX } from './prompts';
+import { CHAT_HISTORY_MAX, SEX_LABEL } from './prompts';
 import { getLang } from '../i18n';
 import type { Lang } from '../i18n/types';
 
-const SEX_LABEL = { male: '男', female: '女' } as const;
 
 const EN_WORKOUT_RULE = `\n\n【Output Language Requirement】\nOutput language: English.\nAll user-facing text fields ("focus", "name", "detail", "tips", "reply", "memoryAdd") MUST be written in natural, concise English (for rest days, set "focus" to "Rest" or "Rest · Stretch"). Output strictly valid JSON only.`;
 
@@ -20,7 +19,7 @@ const PLAN_EXAMPLE = `{
       { "name": "徒手深蹲", "detail": "4 组 × 12 次，膝盖与脚尖同向", "kcal": 60 },
       { "name": "快走", "detail": "20 分钟，微微出汗的速度", "kcal": 110 }
     ] },
-    { "weekday": 2, "focus": "休息·拉伸", "exercises": [{ "name": "全身拉伸", "detail": "10 分钟，每个动作保持 30 秒", "kcal": 25 }] }
+    { "weekday": 2, "focus": "休息·拉伸", "rest": true, "exercises": [{ "name": "全身拉伸", "detail": "10 分钟，每个动作保持 30 秒", "kcal": 25 }] }
   ],
   "tips": ["要点1", "要点2"]
 }`;
@@ -46,7 +45,7 @@ export function workoutPlanMessages(
 【训练条件】${prefsText(prefs)}
 ${memoryBlock}
 【要求】
-1. 7 天中安排 ${prefs.daysPerWeek} 个训练日，其余为休息日：休息日 focus 写“休息”或“休息·拉伸”，exercises 为 0–2 个轻量动作。
+1. 7 天中安排 ${prefs.daysPerWeek} 个训练日，其余为休息日：休息日 focus 写“休息”或“休息·拉伸”，并设置 "rest": true，exercises 为 0–2 个轻量动作；训练日不写 rest 或写 false。
 2. 训练日 2–5 个动作，当天总时长不超过 ${prefs.minutes} 分钟；力量与有氧交替，避免同一肌群连续两天训练。
 3. 动作必须适合训练条件里的场地；新手选择低冲击、易掌握的动作；严格避开伤病/限制中提到的部位和动作。
 4. detail 写清组数×次数或时长，并附一句动作要点。

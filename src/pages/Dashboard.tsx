@@ -17,11 +17,10 @@ import { showBadges } from '../components/BadgePopup';
 import LangSwitch from '../components/LangSwitch';
 import { useT } from '../i18n';
 import type { Lang } from '../i18n/types';
-import { getRecordEncouragement } from '../types';
+import { getRecordEncouragement, getWeekdayLabel } from '../types';
 import { useTranslateStatus } from '../services/aiTranslate';
 
 const BMI_COLOR = { under: '#228be6', normal: '#0ca678', over: '#e67700', obese: '#e03131' } as const;
-const WEEK_ZH = ['日', '一', '二', '三', '四', '五', '六'];
 
 function greeting(lang: Lang) {
   const h = new Date().getHours();
@@ -75,7 +74,7 @@ export default function Dashboard() {
   const onSubmit = async (v: CheckInValues) => {
     const first = !todayRec;
     upsertRecord({ ...v, encouragement: todayRec?.encouragement, encouragementEn: todayRec?.encouragementEn });
-    toast(first ? (lang === 'en' ? 'Check-in saved!' : '打卡成功！') : (lang === 'en' ? 'Updated today’s check-in' : '已更新今日打卡'), 'success');
+    toast(first ? (lang === 'en' ? 'Check-in saved!' : '打卡成功！') : (lang === 'en' ? "Updated today's check-in" : '已更新今日打卡'), 'success');
 
     const after = useStore.getState().records;
     const fresh = newBadges(unlockedBadges(profile, after, today, lang), seenBadges);
@@ -85,7 +84,7 @@ export default function Dashboard() {
 
   const dateSub = lang === 'en'
     ? `${dayjs().format('MMM D')} · ${dayjs().format('dddd')} · ${todayRec ? 'Checked in today ✅' : 'Not checked in yet'}`
-    : `${dayjs().format('M 月 D 日')} · 星期${WEEK_ZH[dayjs().day()]} · ${todayRec ? '今天已经打过卡啦 ✅' : '今天还没打卡哦'}`;
+    : `${dayjs().format('M 月 D 日')} · ${getWeekdayLabel(weekdayOf(today), 'zh')} · ${todayRec ? '今天已经打过卡啦 ✅' : '今天还没打卡哦'}`;
 
   return (
     <>
@@ -195,7 +194,7 @@ export default function Dashboard() {
 
           <section className="card" style={{ animationDelay: '240ms' }}>
             <div className="card-title">
-              <h2>{lang === 'en' ? '🔥 Today’s Calories' : '🔥 今日热量'}</h2>
+              <h2>{lang === 'en' ? "🔥 Today's Calories" : '🔥 今日热量'}</h2>
               <span className={`tag tag-${status}`}>
                 {intake === 0 && burned === 0 ? (lang === 'en' ? 'No Log' : '未记录') : getKcalStatusLabel(status, lang)}
               </span>

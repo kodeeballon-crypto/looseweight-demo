@@ -72,6 +72,8 @@ export interface DailyRecord {
   extraKcal?: number;
   encouragement?: string;
   encouragementEn?: string;
+  /** 打卡时已吃餐次的餐食快照：之后修改食谱不影响历史热量 */
+  mealSnapshot?: Partial<Record<MealKey, Meal>>;
 }
 
 export function getRecordEncouragement(rec: DailyRecord | undefined, lang: Lang = 'zh'): string | undefined {
@@ -215,6 +217,8 @@ export interface WorkoutDay {
   /** 训练重点，如“下肢力量”“休息·拉伸” */
   focus: string;
   focusEn?: string;
+  /** AI 标记的休息日（旧数据可能没有，回退到关键词判断） */
+  rest?: boolean;
   exercises: Exercise[];
 }
 
